@@ -643,7 +643,9 @@ async function checkContract() {
     });
     const d = await r.json();
 
-    if (d.quick) {
+    if (d.limitReached) {
+      showResult('contractResult', 'caution', d.error, []);
+    } else if (d.quick) {
       showResult('contractResult', d.verdict, d.note || d.name, d.links || []);
     } else if (d.jobId) {
       showResult('contractResult', 'pending', '⏳ Analyzing with AI — this takes about 60-90 seconds...', null);
@@ -675,7 +677,9 @@ async function checkURL() {
     });
     const d = await r.json();
 
-    if (d.quick) {
+    if (d.limitReached) {
+      showResult('urlResult', 'caution', d.error, []);
+    } else if (d.quick) {
       const msg = d.name ? (d.verdict === 'safe' ? 'This is an official, verified site. Safe to connect your wallet.' : (d.note || 'Use caution.'))
                          : (d.note || (d.warnings ? d.warnings.join('\n') : ''));
       showResult('urlResult', d.verdict, msg, []);
@@ -750,6 +754,7 @@ async function sendAsk() {
       body: JSON.stringify({question: q})
     });
     const d = await r.json();
+    if (d.limitReached) { loading.textContent = '⚠️ ' + d.error; return; }
     if (!d.jobId) throw new Error('No job ID');
     loading.textContent = '⏳ Analysis in progress (job ' + d.jobId + ')...';
 
