@@ -700,7 +700,7 @@ class Handler(BaseHTTPRequestHandler):
             h, rem = divmod(uptime, 3600)
             m = rem // 60
             self._send_json({"ok": True, "uptime": uptime, "uptimeLabel": f"{h}h {m}m",
-                             "aivm": bool(get_aivm_client_cached())})
+                             "aivm": bool(get_aivm_client())})
             return
 
         if path == "/api/job":
