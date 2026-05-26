@@ -11,14 +11,11 @@ Protects non-technical crypto users from scams:
 - Plain-English AI explanations
 """
 
-import sys
-sys.path.insert(0, '/home/keiko/pylibs')
-
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json, os, threading, time, secrets, base64, re
 from urllib.parse import urlparse, parse_qs
 
-PORT = 8186
+PORT = int(os.environ.get("PORT", 8186))
 
 # ════════════════════════════════════════════════════════════════════════
 # KNOWN VERIFIED CONTRACTS & SITES
