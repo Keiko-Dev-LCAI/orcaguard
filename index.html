@@ -124,6 +124,9 @@
     <div class="nav-item" onclick="showPage('wallet')" id="nav-wallet">
       <span class="nav-icon">📬</span>Verify a Wallet
     </div>
+    <div class="nav-item" onclick="showPage('audit')" id="nav-audit">
+      <span class="nav-icon">🔐</span>Wallet Audit
+    </div>
     <div class="sidebar-label">Resources</div>
     <div class="nav-item" onclick="showPage('buylcai')" id="nav-buylcai">
       <span class="nav-icon">💰</span>Buy LCAI Safely
@@ -237,6 +240,63 @@
       <div class="warning-banner">
         <div class="warning-banner-title">🚨 Never send to an address from a DM</div>
         <p>If anyone sends you a wallet address in Discord, Telegram, or Twitter DMs and asks you to send them crypto — it's a scam. Legitimate projects never ask you to send funds to verify a transaction, claim a reward, or unlock your account.</p>
+      </div>
+    </div>
+
+    <!-- WALLET AUDIT -->
+    <div class="page" id="page-audit">
+      <div class="page-title">🔐 Wallet Audit</div>
+      <div class="page-sub">Connect your wallet for an instant health check — network, balances, and a hygiene report. Nothing is stored or sent anywhere. All checks run directly from your browser.</div>
+
+      <div class="check-box" id="auditConnectBox">
+        <div style="text-align:center;padding:24px 0">
+          <div style="font-size:52px;margin-bottom:16px">🔐</div>
+          <div style="font-size:19px;font-weight:700;margin-bottom:8px;color:#fff">Connect your wallet to start</div>
+          <div style="font-size:14px;color:var(--muted);margin-bottom:24px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.6">Works with MetaMask and Trust Wallet browser. We only read your public address and balances — we never request transaction approval.</div>
+          <button class="check-btn" onclick="connectWalletAudit()" id="auditConnectBtn" style="padding:15px 44px;font-size:16px">Connect Wallet</button>
+          <div id="auditConnectError" style="margin-top:14px;font-size:14px;color:var(--yellow);display:none"></div>
+        </div>
+      </div>
+
+      <div id="auditResults" style="display:none">
+        <div class="check-box" style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div>
+              <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Connected Wallet</div>
+              <div id="auditAddress" style="font-family:monospace;font-size:14px;color:var(--cyan)"></div>
+            </div>
+            <button onclick="disconnectAudit()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px">Disconnect</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px">
+          <div class="info-card" style="padding:18px 20px">
+            <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Network</div>
+            <div id="auditNetwork" style="font-size:16px;font-weight:700"></div>
+          </div>
+          <div class="info-card" style="padding:18px 20px">
+            <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">ETH Balance</div>
+            <div id="auditEth" style="font-size:16px;font-weight:700"></div>
+          </div>
+          <div class="info-card" style="padding:18px 20px">
+            <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">LCAI Balance</div>
+            <div id="auditLcai" style="font-size:16px;font-weight:700"></div>
+          </div>
+        </div>
+
+        <div id="auditChecks" style="display:grid;gap:10px;margin-bottom:20px"></div>
+
+        <div class="info-card" style="border-color:rgba(0,212,255,0.2)">
+          <div class="info-card-title">🔍 Check Your Token Approvals</div>
+          <p>Token approvals are permissions you've given to smart contracts to spend your tokens. Old or unlimited approvals are a security risk — a compromised contract could drain your wallet.</p>
+          <p style="margin-top:8px">Use <strong style="color:#fff">Revoke.cash</strong> — a trusted, free tool — to see all your active approvals and cancel the ones you don't need:</p>
+          <a href="https://revoke.cash" target="_blank" class="check-btn" style="display:inline-block;margin-top:14px;text-decoration:none;padding:12px 28px">Open Revoke.cash →</a>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-title">💡 What we check</div>
+        <p>When you connect, OrcaGuard automatically checks: which network you're on, your ETH balance (needed for gas), your LCAI balance, and flags any immediate concerns. For a full approval audit, we link you to Revoke.cash — the gold standard for approval management.</p>
       </div>
     </div>
 
@@ -429,6 +489,38 @@
           <div style="font-size:15px;color:var(--text);line-height:1.6">✅ Check the URL in your browser bar every time before you connect your wallet — one character difference is a phishing site.</div>
           <div style="font-size:15px;color:var(--text);line-height:1.6">✅ Revoke old token approvals regularly using a trusted revoke tool like <a href="https://revoke.cash" target="_blank" style="color:var(--cyan)">revoke.cash</a>. Unlimited approvals are a security risk.</div>
           <div style="font-size:15px;color:var(--text);line-height:1.6">✅ Your seed phrase and private key are never needed by any legitimate website. If a site asks for them — leave immediately.</div>
+        </div>
+      </div>
+
+      <!-- TRANSACTION SAFETY -->
+      <div class="info-card" style="border-color:rgba(255,68,68,0.2)">
+        <div class="info-card-title">📋 Before You Sign Any Transaction — Read This</div>
+        <p>Every transaction your wallet asks you to sign is a request to do something with your money or permissions. Most wallet drains happen because someone signed something without understanding what it was.</p>
+        <div style="display:grid;gap:10px;margin-top:14px">
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:var(--green);margin-bottom:6px;font-size:15px">✅ Signs you're probably safe</div>
+            <div style="font-size:14px;color:var(--muted);line-height:1.7">
+              • You initiated this action yourself (you clicked something on a site you trust)<br>
+              • The transaction shows a specific token amount — not "unlimited"<br>
+              • The gas fee is reasonable (a few dollars or less on Lightchain, variable on Ethereum)<br>
+              • The destination address matches what you expect
+            </div>
+          </div>
+          <div style="background:rgba(255,68,68,0.07);border-radius:10px;padding:14px 16px;border:1px solid rgba(255,68,68,0.2)">
+            <div style="font-weight:700;color:var(--red);margin-bottom:6px;font-size:15px">🚨 Stop and don't sign if you see any of these</div>
+            <div style="font-size:14px;color:#cc9999;line-height:1.7">
+              • The approval amount says "unlimited" or shows a huge number (115792089...)<br>
+              • The transaction popped up without you clicking anything<br>
+              • It's asking you to <strong style="color:#ff8888">setApprovalForAll</strong> (gives complete control of your NFTs)<br>
+              • The gas fee is extremely high for something that should be simple<br>
+              • The site URL has anything suspicious — even one wrong character<br>
+              • Someone told you to approve this in a chat message or DM
+            </div>
+          </div>
+          <div style="background:rgba(255,170,0,0.07);border-radius:10px;padding:14px 16px;border:1px solid rgba(255,170,0,0.2)">
+            <div style="font-weight:700;color:var(--yellow);margin-bottom:6px;font-size:15px">⚠️ What "Approve" and "Permit" really mean</div>
+            <p style="font-size:14px;color:#bb9955;line-height:1.7;margin:0">These give a smart contract permission to spend your tokens. Legitimate DeFi apps (like Uniswap) need a one-time approval before a swap — that's normal. But always set the approval amount to just what you need for that transaction, not unlimited. After the trade, that approval stays active forever unless you revoke it.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -681,6 +773,107 @@ function guessVerdict(text) {
   if (t.includes('🟡') || t.includes('caution') || t.includes('suspicious') || t.includes('careful')) return 'caution';
   if (t.includes('🟢') || t.includes('safe') || t.includes('official') || t.includes('verified') || t.includes('legitimate')) return 'safe';
   return 'caution';
+}
+
+// ── Wallet Audit ────────────────────────────────────────────────────────
+const NETWORKS = {
+  '0x1':    { name: 'Ethereum Mainnet', ok: true,  color: 'var(--green)' },
+  '0x23f0': { name: 'Lightchain Mainnet', ok: true, color: 'var(--cyan)' },
+  '0x5':    { name: 'Goerli Testnet', ok: false, color: 'var(--yellow)' },
+  '0x89':   { name: 'Polygon', ok: false, color: 'var(--yellow)' },
+  '0x38':   { name: 'BNB Chain', ok: false, color: 'var(--yellow)' },
+  '0xa4b1': { name: 'Arbitrum', ok: false, color: 'var(--yellow)' },
+};
+const LCAI_CONTRACT = '0x9cA8530CA349c966Fe9ef903Df17a75B8A778927';
+
+async function connectWalletAudit() {
+  const btn = document.getElementById('auditConnectBtn');
+  const errEl = document.getElementById('auditConnectError');
+  errEl.style.display = 'none';
+
+  if (!window.ethereum) {
+    errEl.textContent = 'No wallet detected. Open this page inside your Trust Wallet or MetaMask browser.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
+
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    const address  = accounts[0];
+    const chainId  = (await window.ethereum.request({ method: 'eth_chainId' })).toLowerCase();
+
+    // ETH balance
+    const balHex   = await window.ethereum.request({ method: 'eth_getBalance', params: [address, 'latest'] });
+    const ethBal   = (parseInt(balHex, 16) / 1e18).toFixed(4);
+
+    // LCAI ERC-20 balance (only meaningful on Ethereum Mainnet)
+    let lcaiBal = '—';
+    if (chainId === '0x1') {
+      try {
+        const data   = '0x70a08231' + address.slice(2).padStart(64, '0');
+        const lcaiHex = await window.ethereum.request({ method: 'eth_call', params: [{ to: LCAI_CONTRACT, data }, 'latest'] });
+        lcaiBal = (parseInt(lcaiHex, 16) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      } catch(e) { lcaiBal = 'Error'; }
+    } else if (chainId === '0x23f0') {
+      lcaiBal = ethBal + ' (native)';
+    }
+
+    // Display
+    document.getElementById('auditAddress').textContent = address.slice(0,8) + '...' + address.slice(-6);
+    document.getElementById('auditConnectBox').style.display = 'none';
+    document.getElementById('auditResults').style.display = 'block';
+
+    const net = NETWORKS[chainId] || { name: 'Unknown network (chain ' + chainId + ')', ok: false, color: 'var(--red)' };
+    document.getElementById('auditNetwork').innerHTML = '<span style="color:' + net.color + '">' + net.name + '</span>';
+    document.getElementById('auditEth').textContent = ethBal + ' ETH';
+    document.getElementById('auditLcai').textContent = lcaiBal + (chainId === '0x1' ? ' LCAI' : '');
+
+    // Health checks
+    const checks = [];
+
+    if (net.ok) {
+      checks.push({ ok: true,  text: 'Connected to ' + net.name + ' — correct network for LCAI' });
+    } else {
+      checks.push({ ok: false, text: 'You\'re on ' + net.name + '. Switch to Ethereum Mainnet to see LCAI balance, or Lightchain Mainnet to use dApps.' });
+    }
+
+    if (chainId === '0x1' && parseFloat(ethBal) < 0.005) {
+      checks.push({ ok: false, text: 'Low ETH balance (' + ethBal + ' ETH). You need some ETH to pay gas fees for any Ethereum transaction.' });
+    } else if (chainId === '0x1') {
+      checks.push({ ok: true, text: 'ETH balance looks good for covering gas fees.' });
+    }
+
+    if (chainId === '0x1' && lcaiBal !== '—' && lcaiBal !== 'Error' && parseFloat(lcaiBal.replace(/,/g,'')) > 0) {
+      checks.push({ ok: true, text: 'LCAI detected on Ethereum. Remember you can bridge to Lightchain Mainnet to use it in dApps.' });
+    }
+
+    checks.push({ ok: null, text: 'Check your active token approvals with Revoke.cash — unlimited approvals are a security risk. Tap the button below.' });
+
+    const checksEl = document.getElementById('auditChecks');
+    checksEl.innerHTML = checks.map(c => {
+      const icon  = c.ok === null ? '🔗' : (c.ok ? '✅' : '⚠️');
+      const color = c.ok === null ? 'rgba(0,212,255,0.08)' : (c.ok ? 'rgba(0,230,118,0.07)' : 'rgba(255,170,0,0.07)');
+      const border= c.ok === null ? 'rgba(0,212,255,0.2)' : (c.ok ? 'rgba(0,230,118,0.25)' : 'rgba(255,170,0,0.3)');
+      return '<div style="background:' + color + ';border:1px solid ' + border + ';border-radius:10px;padding:14px 16px;font-size:15px;display:flex;gap:12px;align-items:flex-start"><span style="font-size:18px;flex-shrink:0">' + icon + '</span><span style="line-height:1.6">' + c.text + '</span></div>';
+    }).join('');
+
+  } catch(e) {
+    errEl.textContent = e.code === 4001 ? 'Connection cancelled.' : ('Error: ' + e.message);
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Connect Wallet';
+  }
+}
+
+function disconnectAudit() {
+  document.getElementById('auditConnectBox').style.display = 'block';
+  document.getElementById('auditResults').style.display = 'none';
+  document.getElementById('auditConnectBtn').disabled = false;
+  document.getElementById('auditConnectBtn').textContent = 'Connect Wallet';
+  document.getElementById('auditConnectError').style.display = 'none';
 }
 </script>
 </body>
