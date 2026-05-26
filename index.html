@@ -20,11 +20,9 @@
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
   .header { background: rgba(0,0,0,0.4); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; }
-  .header-logo-wrap { width: 56px; height: 56px; border-radius: 12px; background: #1a2a3a; border: 1px solid rgba(0,212,255,0.2); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-  .header-logo-img { width: 56px; height: 56px; object-fit: contain; }
-  .logo { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
-  .logo span { color: var(--cyan); }
-  .logo-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .header-logo-wrap { width: 46px; height: 46px; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px rgba(0,212,255,0.3); flex-shrink: 0; }
+  .header-logo-img { width: 46px; height: 46px; object-fit: cover; border-radius: 12px; }
+  .logo { font-size: 22px; font-weight: 800; color: var(--cyan); letter-spacing: -0.3px; }
   .header-badge { margin-left: auto; background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
 
   .layout { display: flex; min-height: calc(100vh - 69px); }
@@ -110,10 +108,7 @@
   <div class="header-logo-wrap">
     <img src="orca-icon.png" class="header-logo-img" alt="OrcaGuard">
   </div>
-  <div>
-    <div class="logo">Orca<span>Guard</span></div>
-    <div class="logo-sub">Crypto Safety Assistant</div>
-  </div>
+  <span class="logo">OrcaGuard</span>
   <div class="header-badge" id="serverBadge">● Checking...</div>
 </div>
 
@@ -196,12 +191,14 @@
       <div class="info-card">
         <div class="info-card-title">✅ Official Lightchain Sites</div>
         <p>Only connect your wallet to these official Lightchain domains:</p>
-        <div style="display:grid;gap:6px;margin-top:10px">
-          <div style="font-size:13px;color:var(--green)">✅ lightchain.ai — Official site</div>
-          <div style="font-size:13px;color:var(--green)">✅ bridge.lightchain.ai — Official bridge</div>
-          <div style="font-size:13px;color:var(--green)">✅ workers.lightchain.ai — Worker explorer</div>
-          <div style="font-size:13px;color:var(--green)">✅ dao.lightchain.ai — Governance voting</div>
-          <div style="font-size:13px;color:var(--green)">✅ app.uniswap.org — Official Uniswap</div>
+        <div style="display:grid;gap:8px;margin-top:12px">
+          <div style="font-size:15px;color:var(--green)">✅ <a href="https://lightchain.ai" target="_blank" style="color:var(--green)">lightchain.ai</a> — Official site</div>
+          <div style="font-size:15px;color:var(--green)">✅ <a href="https://bridge.lightchain.ai" target="_blank" style="color:var(--green)">bridge.lightchain.ai</a> — Official bridge</div>
+          <div style="font-size:15px;color:var(--green)">✅ <a href="https://workers.lightchain.ai" target="_blank" style="color:var(--green)">workers.lightchain.ai</a> — Worker explorer</div>
+          <div style="font-size:15px;color:var(--green)">✅ <a href="https://dao.lightchain.ai" target="_blank" style="color:var(--green)">dao.lightchain.ai</a> — Governance voting</div>
+          <div style="font-size:15px;color:var(--green)">✅ <a href="https://docs.lightchain.ai" target="_blank" style="color:var(--green)">docs.lightchain.ai</a> — Documentation</div>
+          <div style="font-size:15px;color:var(--green)">✅ <a href="https://mainnet.lightscan.app" target="_blank" style="color:var(--green)">mainnet.lightscan.app</a> — Block explorer</div>
+          <div style="font-size:15px;color:var(--green)">✅ <a href="https://app.uniswap.org" target="_blank" style="color:var(--green)">app.uniswap.org</a> — Official Uniswap</div>
         </div>
       </div>
     </div>
