@@ -929,13 +929,14 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
                              "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
             return
 
-        # On-chain lookup — check Ethereum and Lightchain
+        # On-chain lookup — parallel threads to avoid sequential timeout
+        import urllib.request as _ur
+
         def _rpc_call(rpc_url, method, params):
             try:
-                import urllib.request as _ur
                 payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
                 req = _ur.Request(rpc_url, data=payload, headers={"Content-Type": "application/json"})
-                with _ur.urlopen(req, timeout=8) as r:
+                with _ur.urlopen(req, timeout=7) as r:
                     return json.loads(r.read()).get("result", None)
             except Exception:
                 return None
@@ -943,13 +944,72 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
         ETH_RPC  = "https://eth.llamarpc.com"
         LCAI_RPC = "https://rpc.mainnet.lightchain.ai"
 
-        chains = {}
-        for chain, rpc in [("Ethereum", ETH_RPC), ("Lightchain", LCAI_RPC)]:
-            code     = _rpc_call(rpc, "eth_getCode", [address, "latest"])
-            tx_hex   = _rpc_call(rpc, "eth_getTransactionCount", [address, "latest"])
-            is_contract = bool(code and len(code) > 4)
-            tx_count    = int(tx_hex, 16) if tx_hex else 0
-            chains[chain] = {"is_contract": is_contract, "tx_count": tx_count}
+        results = {
+            "eth_code": None, "eth_tx": None,
+            "lcai_code": None, "lcai_tx": None,
+        }
+        def _fetch(key, rpc, method, params):
+            results[key] = _rpc_call(rpc, method, params)
+
+        fetch_threads = [
+            threading.Thread(target=_fetch, args=("eth_code",  ETH_RPC,  "eth_getCode",             [address, "latest"])),
+            threading.Thread(target=_fetch, args=("eth_tx",    ETH_RPC,  "eth_getTransactionCount", [address, "latest"])),
+            threading.Thread(target=_fetch, args=("lcai_code", LCAI_RPC, "eth_getCode",             [address, "latest"])),
+            threading.Thread(target=_fetch, args=("lcai_tx",   LCAI_RPC, "eth_getTransactionCount", [address, "latest"])),
+        ]
+        for t in fetch_threads: t.start()
+        for t in fetch_threads: t.join(timeout=10)
+
+        eth_contract  = bool(results["eth_code"]  and len(results["eth_code"])  > 4)
+        eth_tx        = int(results["eth_tx"],  16) if results["eth_tx"]  else 0
+        lcai_contract = bool(results["lcai_code"] and len(results["lcai_code"]) > 4)
+        lcai_tx       = int(results["lcai_tx"], 16) if results["lcai_tx"] else 0
+
+        chains = {
+            "Ethereum":   {"is_contract": eth_contract,  "tx_count": eth_tx},
+            "Lightchain": {"is_contract": lcai_contract, "tx_count": lcai_tx},
+        }
+
+        # Quick rules-based verdict (returned immediately — no AI needed for clear cases)
+        total_tx = eth_tx + lcai_tx
+        if eth_contract or lcai_contract:
+            quick_verdict = "LIKELY BOT"
+            quick_reason  = (
+                f"This address is a smart contract on "
+                f"{'Ethereum' if eth_contract else 'Lightchain'} "
+                f"with {total_tx:,} total transactions. Smart contracts used as "
+                f"wallet addresses are almost always automated bots (MEV, arbitrage, or sandwich bots)."
+            )
+        elif total_tx > 10000:
+            quick_verdict = "BOT"
+            quick_reason  = (
+                f"{total_tx:,} total transactions across Ethereum and Lightchain. "
+                f"This level of activity is far beyond typical human trading — almost certainly automated."
+            )
+        elif total_tx > 1000:
+            quick_verdict = "LIKELY BOT"
+            quick_reason  = (
+                f"{total_tx:,} total transactions. High activity suggests automation, "
+                f"though some very active DeFi traders could reach this count."
+            )
+        elif total_tx > 100:
+            quick_verdict = "UNCLEAR"
+            quick_reason  = (
+                f"{total_tx:,} total transactions. Could be an active human trader "
+                f"or a less-active bot. On-chain data alone is inconclusive."
+            )
+        elif total_tx == 0:
+            quick_verdict = "UNCLEAR"
+            quick_reason  = (
+                "No transactions found on Ethereum or Lightchain for this address. "
+                "It may be a new wallet, an unused address, or the RPC nodes may be slow today."
+            )
+        else:
+            quick_verdict = "LIKELY HUMAN"
+            quick_reason  = (
+                f"{total_tx:,} total transactions. Low activity is more consistent "
+                f"with a regular human wallet than an automated bot."
+            )
 
         eth  = chains.get("Ethereum",  {})
         lcai = chains.get("Lightchain", {})
@@ -997,7 +1057,13 @@ What to watch for: [one specific thing to be cautious about if interacting with 
                     _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
 
         threading.Thread(target=_run, daemon=True).start()
-        self._send_json({"ok": True, "jobId": job_id, "chainData": chains, "remaining": remaining})
+        self._send_json({
+            "ok": True, "jobId": job_id,
+            "chainData": chains,
+            "quickVerdict": quick_verdict,
+            "quickReason":  quick_reason,
+            "remaining": remaining,
+        })
 
 
     def _handle_scan_airdrops(self):
