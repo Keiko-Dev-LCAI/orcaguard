@@ -848,14 +848,23 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
 # ════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
+    import socketserver
     print(f"OrcaGuard backend starting on port {PORT}...")
-    aivm = get_aivm_client_cached()
-    if aivm:
-        print(f"  AI: Lightchain AIVM (wallet {aivm._account.address})")
-    else:
-        print("  AI: UNAVAILABLE — set LIGHTCHAIN_PRIVATE_KEY to enable")
-    server = HTTPServer(("0.0.0.0", PORT), Handler)
-    print(f"  Ready: http://localhost:{PORT}")
+
+    class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+        daemon_threads = True
+
+    server = ThreadedHTTPServer(("0.0.0.0", PORT), Handler)
+    print(f"  Ready: http://0.0.0.0:{PORT}")
+
+    def _init_aivm():
+        aivm = get_aivm_client()
+        if aivm:
+            print(f"  AI: Lightchain AIVM (wallet {aivm._account.address})")
+        else:
+            print("  AI: UNAVAILABLE — set LIGHTCHAIN_PRIVATE_KEY to enable")
+    threading.Thread(target=_init_aivm, daemon=True).start()
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:
