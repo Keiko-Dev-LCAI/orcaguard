@@ -458,6 +458,28 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_error("index.html not found", 404)
             return
 
+        # Serve static assets (icon, favicon, etc.) from the same directory
+        STATIC_TYPES = {
+            ".png": "image/png", ".ico": "image/x-icon",
+            ".svg": "image/svg+xml", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        }
+        _, ext = os.path.splitext(path)
+        if ext.lower() in STATIC_TYPES:
+            static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       os.path.basename(path))
+            if os.path.isfile(static_path):
+                with open(static_path, "rb") as f:
+                    body = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", STATIC_TYPES[ext.lower()])
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "public, max-age=86400")
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            self._send_error("Not found", 404)
+            return
+
         if path == "/api/health":
             uptime = int(time.time() - SERVER_START)
             h, rem = divmod(uptime, 3600)
