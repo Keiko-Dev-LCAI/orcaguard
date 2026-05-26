@@ -959,65 +959,54 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
         results = {
             "eth_code": None, "eth_tx": None,
             "lcai_code": None, "lcai_tx": None,
-            "eth_txlist": None,
+            "txlist": None, "tokentx": None,
         }
 
         def _fetch(key, rpc, method, params):
             results[key] = _rpc_call(rpc, method, params)
 
         ETHERSCAN_KEY = os.environ.get("ETHERSCAN_API_KEY", "")
-        key_param     = f"&apikey={ETHERSCAN_KEY}" if ETHERSCAN_KEY else ""
+        key_param = f"&apikey={ETHERSCAN_KEY}" if ETHERSCAN_KEY else ""
 
-        def _etherscan_get(action, extra=""):
-            """Fetch from Etherscan; returns list or None on failure."""
+        def _etherscan_fetch(action, key):
+            """Fetch txlist or tokentx from Etherscan into results[key]."""
             try:
                 url = (
                     "https://api.etherscan.io/api"
                     f"?module=account&action={action}"
                     f"&address={address}"
                     "&startblock=0&endblock=99999999"
-                    f"&page=1&offset=50&sort=desc{extra}{key_param}"
+                    f"&page=1&offset=50&sort=desc{key_param}"
                 )
                 req = _ur.Request(url, headers={"User-Agent": "OrcaGuard/1.0"})
                 with _ur.urlopen(req, timeout=10) as r:
                     data = json.loads(r.read())
                 msg = data.get("message", "")
                 if data.get("status") == "1":
-                    return data.get("result", [])
-                if "No transactions" in msg or "No records" in msg:
-                    return []          # confirmed empty, not an error
-                print(f"  [Etherscan/{action}] status={data.get('status')} msg={msg}")
-                return None            # API error / rate-limited
+                    results[key] = data.get("result", [])
+                elif "No transactions" in msg or "No records" in msg:
+                    results[key] = []   # confirmed empty, not an error
+                else:
+                    print(f"  [Etherscan/{action}] status={data.get('status')} msg={msg}")
+                    results[key] = None
             except Exception as e:
                 print(f"  [Etherscan/{action}] exception: {e}")
-                return None
+                results[key] = None
 
-        def _fetch_etherscan(key):
-            # Try normal txlist first; fall back to token transfers
-            txlist = _etherscan_get("txlist")
-            if txlist is not None:
-                results[key] = txlist
-                return
-            # txlist failed — try tokentx as a fallback signal
-            tokentx = _etherscan_get("tokentx")
-            if tokentx is not None:
-                # Convert token tx records so DEX check still works
-                # (to address is the router or token contract — less precise but better than nothing)
-                results[key] = tokentx
-            # else: leave as None
-
-        # Start RPC threads (fast — respond to user immediately after these)
+        # Start all threads in parallel — RPC and both Etherscan fetches at the same time
         rpc_threads = [
             threading.Thread(target=_fetch, args=("eth_code",  ETH_RPC,  "eth_getCode",             [address, "latest"]), daemon=True),
             threading.Thread(target=_fetch, args=("eth_tx",    ETH_RPC,  "eth_getTransactionCount", [address, "latest"]), daemon=True),
             threading.Thread(target=_fetch, args=("lcai_code", LCAI_RPC, "eth_getCode",             [address, "latest"]), daemon=True),
             threading.Thread(target=_fetch, args=("lcai_tx",   LCAI_RPC, "eth_getTransactionCount", [address, "latest"]), daemon=True),
         ]
-        # Start Etherscan thread separately — it runs in background, picked up by AI job
-        es_thread = threading.Thread(target=_fetch_etherscan, args=("eth_txlist",), daemon=True)
+        es_txlist  = threading.Thread(target=_etherscan_fetch, args=("txlist",  "txlist"),  daemon=True)
+        es_tokentx = threading.Thread(target=_etherscan_fetch, args=("tokentx", "tokentx"), daemon=True)
+
         for t in rpc_threads: t.start()
-        es_thread.start()
-        # Wait only for fast RPC calls before responding
+        es_txlist.start()
+        es_tokentx.start()
+        # Wait only for fast RPC calls before responding to user
         for t in rpc_threads: t.join(timeout=8)
 
         eth_contract  = bool(results["eth_code"]  and len(results["eth_code"])  > 4)
@@ -1025,207 +1014,113 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
         lcai_contract = bool(results["lcai_code"] and len(results["lcai_code"]) > 4)
         lcai_tx       = int(results["lcai_tx"], 16) if results["lcai_tx"] else 0
 
-        # Analyze Etherscan transaction list for DEX activity
-        txlist         = results["eth_txlist"] or []
-        total_txlist   = len(txlist)            # how many of the last 50 we got
-        dex_hits       = {}                     # router_name -> count
-        unique_to      = set()
-        error_tx_count = 0
-        for tx in txlist:
-            to = (tx.get("to") or "").lower()
-            if to in DEX_ROUTERS:
-                name = DEX_ROUTERS[to]
-                dex_hits[name] = dex_hits.get(name, 0) + 1
-            unique_to.add(to)
-            if tx.get("isError") == "0":
-                pass
-            else:
-                error_tx_count += 1
-
-        # Use the Etherscan total count if nonce is missing/zero
-        # Etherscan returns up to 50; if all 50 returned, actual count is likely much higher
-        etherscan_shows_activity = total_txlist > 0
-        is_high_dex_activity     = sum(dex_hits.values()) >= 5
-        is_concentrated_dex      = len(dex_hits) == 1 and sum(dex_hits.values()) >= 3  # all to same router
-
-        # Build enriched tx count — use nonce if available, else infer from Etherscan
-        if eth_tx == 0 and total_txlist > 0:
-            # nonce call may have failed; use Etherscan count as floor
-            eth_tx = total_txlist  # at minimum this many
-
-        chains = {
-            "Ethereum":   {"is_contract": eth_contract,  "tx_count": eth_tx},
-            "Lightchain": {"is_contract": lcai_contract, "tx_count": lcai_tx},
-        }
-        total_tx = eth_tx + lcai_tx
-
-        # Quick rules-based verdict (returned immediately, no AI needed)
-        if eth_contract or lcai_contract:
-            quick_verdict = "LIKELY BOT"
-            quick_reason  = (
-                f"This address is a smart contract on "
-                f"{'Ethereum' if eth_contract else 'Lightchain'}. "
-                f"Smart contracts used as wallet addresses are almost always automated bots "
-                f"(MEV, arbitrage, or sandwich bots)."
-            )
-        elif is_high_dex_activity or is_concentrated_dex:
-            router_names = ", ".join(f"{v}× {k}" for k, v in dex_hits.items())
-            quick_verdict = "LIKELY BOT"
-            quick_reason  = (
-                f"Among the last {total_txlist} transactions, {sum(dex_hits.values())} went to DEX routers "
-                f"({router_names}). Bots repeatedly hit the same router contracts — humans spread activity across different types of transactions."
-            )
-        elif total_tx > 10000:
-            quick_verdict = "BOT"
-            quick_reason  = (
-                f"{total_tx:,} total transactions. Far beyond typical human trading volume — almost certainly automated."
-            )
-        elif total_tx > 1000:
-            quick_verdict = "LIKELY BOT"
-            quick_reason  = (
-                f"{total_tx:,} total transactions. High activity strongly suggests automation."
-            )
-        elif dex_hits and total_txlist > 0:
-            router_names = ", ".join(f"{v}× {k}" for k, v in dex_hits.items())
-            quick_verdict = "UNCLEAR"
-            quick_reason  = (
-                f"Some DEX router activity ({router_names}) in the last {total_txlist} transactions. "
-                f"Could be an active human DeFi user or a less-active bot. Hard to tell from count alone."
-            )
-        elif total_tx == 0 and not etherscan_shows_activity:
-            quick_verdict = "UNCLEAR"
-            quick_reason  = (
-                "No transaction data found on Ethereum or Lightchain. "
-                "May be a new wallet, an address that hasn't sent transactions, or RPC data is unavailable — "
-                "check Etherscan directly for the full picture."
-            )
-        elif total_tx < 50:
-            quick_verdict = "LIKELY HUMAN"
-            quick_reason  = (
-                f"{total_tx:,} total transactions with no concentrated DEX router activity. "
-                f"Low activity is more consistent with a regular human wallet."
-            )
-        else:
-            quick_verdict = "UNCLEAR"
-            quick_reason  = (
-                f"{total_tx:,} total transactions. Neither clearly bot-like nor clearly human — "
-                f"check Etherscan for timing patterns to be sure."
-            )
-
-        # Build DEX activity summary line for prompt + display
-        if dex_hits:
-            dex_summary = "DEX router calls in last {} txns: {}".format(
-                total_txlist,
-                ", ".join(f"{v}× {k}" for k, v in dex_hits.items())
-            )
-        elif etherscan_shows_activity:
-            dex_summary = f"Last {total_txlist} transactions: no DEX router calls detected"
-        else:
-            dex_summary = "Etherscan data unavailable — nonce-based count only"
-
-        eth  = chains.get("Ethereum",  {})
-        lcai = chains.get("Lightchain", {})
-
-        chain_summary = (
-            f"Ethereum: {'Smart contract' if eth.get('is_contract') else 'Regular wallet'}, "
-            f"{eth.get('tx_count', 0):,} transactions (nonce)\n"
-            f"Lightchain: {'Smart contract' if lcai.get('is_contract') else 'Regular wallet'}, "
-            f"{lcai.get('tx_count', 0):,} transactions\n"
-            f"{dex_summary}"
-        )
-
         import uuid
         job_id = str(uuid.uuid4())[:12]
         with _jobs_lock:
             _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "bot", "address": address}
 
-        # Send jobId immediately — everything else runs in background
+        # Send jobId immediately — Etherscan + AIVM run fully in background
         self._send_json({
             "ok": True, "jobId": job_id,
             "etherscanUrl": f"https://etherscan.io/address/{address}",
             "remaining":    remaining,
         })
 
-        # Capture for background thread closure
-        _es_thread   = es_thread
-        _results     = results
-        _eth_tx      = eth_tx
-        _lcai_tx     = lcai_tx
-        _eth_c       = eth_contract
-        _lcai_c      = lcai_contract
-        _DEX         = DEX_ROUTERS
+        # Capture locals for background thread
+        _es_txlist  = es_txlist
+        _es_tokentx = es_tokentx
+        _results    = results
+        _eth_tx     = eth_tx
+        _lcai_tx    = lcai_tx
+        _eth_c      = eth_contract
+        _lcai_c     = lcai_contract
+        _DEX        = DEX_ROUTERS
 
         def _run():
-            # Wait for Etherscan to finish (already running in background)
-            _es_thread.join(timeout=12)
+            # Wait for both Etherscan fetches to finish
+            _es_txlist.join(timeout=12)
+            _es_tokentx.join(timeout=12)
 
-            txlist2   = _results.get("eth_txlist") or []
-            total_txl = len(txlist2)
-            dex2      = {}
-            for tx in txlist2:
+            txlist  = _results.get("txlist")  or []
+            tokentx = _results.get("tokentx") or []
+
+            # Analyze txlist: which DEX routers did this wallet call?
+            dex_hits = {}
+            for tx in txlist:
                 to = (tx.get("to") or "").lower()
                 if to in _DEX:
-                    dex2[_DEX[to]] = dex2.get(_DEX[to], 0) + 1
+                    name = _DEX[to]
+                    dex_hits[name] = dex_hits.get(name, 0) + 1
 
-            total_tx2 = _eth_tx + _lcai_tx
+            # Analyze tokentx: token transfer patterns (received vs sent per token)
+            token_summary = {}
+            for tx in tokentx:
+                symbol   = tx.get("tokenSymbol", "?")
+                is_in    = (tx.get("to", "").lower() == address.lower())
+                contract = tx.get("contractAddress", "").lower()
+                if contract not in token_summary:
+                    token_summary[contract] = {"symbol": symbol, "in": 0, "out": 0}
+                if is_in:
+                    token_summary[contract]["in"] += 1
+                else:
+                    token_summary[contract]["out"] += 1
 
-            if dex2:
-                dex_line = "DEX router calls in last {} txns: {}".format(
-                    total_txl, ", ".join(f"{v}× {k}" for k, v in dex2.items()))
-            elif total_txl > 0:
-                dex_line = f"Last {total_txl} transactions: no DEX router calls"
+            # Build human-readable lines for the AI prompt
+            if dex_hits:
+                dex_line = "DEX router calls in last {} normal txns: {}".format(
+                    len(txlist), ", ".join(f"{v}x {k}" for k, v in dex_hits.items()))
+            elif _results.get("txlist") is not None:
+                dex_line = f"Last {len(txlist)} normal transactions checked: zero DEX router calls detected"
             else:
-                dex_line = "Etherscan data unavailable"
+                dex_line = "Etherscan normal transaction data unavailable"
 
-            # Skip AI if there's genuinely nothing to analyze
-            if total_tx2 == 0 and total_txl == 0:
-                with _jobs_lock:
-                    _jobs[job_id] = {
-                        "status": "done", "ts": time.time(), "type": "bot",
-                        "answer": (
-                            "VERDICT: UNCLEAR\n"
-                            "No transaction history found for this address on Ethereum or Lightchain. "
-                            "This is a new or unused wallet — zero transactions is not a bot signal. "
-                            "Double-check the address is correct, or check Etherscan directly.\n"
-                            "What to watch for: Verify the address through a separate channel before sending any funds."
-                        )
-                    }
-                return
+            if token_summary:
+                top = sorted(token_summary.items(), key=lambda x: x[1]["in"] + x[1]["out"], reverse=True)[:5]
+                token_line = "ERC-20 token activity (last 50 token txns): " + ", ".join(
+                    f"{v['symbol']} ({v['in']} received / {v['out']} sent)" for _, v in top)
+            elif _results.get("tokentx") is not None:
+                token_line = "No ERC-20 token transfers found"
+            else:
+                token_line = "Etherscan token transfer data unavailable"
 
             chain_s = (
-                f"Ethereum: {'Smart contract' if _eth_c else 'Regular wallet'}, {_eth_tx:,} transactions (nonce)\n"
-                f"Lightchain: {'Smart contract' if _lcai_c else 'Regular wallet'}, {_lcai_tx:,} transactions\n"
-                f"{dex_line}"
+                f"Ethereum: {'Smart contract' if _eth_c else 'Regular wallet'}, "
+                f"{_eth_tx:,} outbound transactions (nonce)\n"
+                f"Lightchain: {'Smart contract' if _lcai_c else 'Regular wallet'}, "
+                f"{_lcai_tx:,} outbound transactions\n"
+                f"{dex_line}\n"
+                f"{token_line}"
             )
 
-            prompt = f"""Analyze this Ethereum wallet address and determine if it is likely a trading bot or a human trader.
+            prompt = f"""Analyze this Ethereum wallet address and determine if it is a trading bot or a human trader.
 
 Address: {address}
 
-On-chain data:
+On-chain data collected from Etherscan and RPC nodes:
 {chain_s}
 
-STRICT RULES — you must follow these:
-1. Zero or low transactions means the wallet is new or inactive — NOT a bot. If all counts are 0, answer UNCLEAR only.
-2. Only draw conclusions from the data above. Do not invent or assume anything not listed.
-3. BOT verdict requires real evidence: smart contract wallet, nonce >1000, or many repeated DEX router calls.
-4. Insufficient data = UNCLEAR.
+RULES you must follow:
+1. Zero transactions is NOT evidence of a bot. A wallet with 0 transactions is new or unused — answer UNCLEAR.
+2. Base your verdict only on the data shown above. Do not invent facts.
+3. BOT verdict requires solid evidence: the address is a smart contract, OR nonce is over 1000, OR 5+ of the last transactions go to the same DEX router repeatedly.
+4. If data is missing or unavailable, acknowledge it and lean toward UNCLEAR.
 
-Strong bot signals (only if present in data above):
-- Address is a smart contract
-- Nonce >1000 concentrated on one DEX router
-- 5+ of the last transactions are to the same DEX router
+What makes a bot:
+- Address deployed as a smart contract (not a regular wallet)
+- Extremely high transaction count (1000+) concentrated on one or two DEX routers
+- Rapid repeated swaps through the same router with no other activity
 
-Human signals:
-- Low nonce with diverse activity
-- Mix of token approvals, swaps, NFTs, governance
+What makes a human:
+- Moderate transaction count with a mix of activity types
+- Token approvals, NFTs, governance votes, transfers — not just swaps
+- Activity spread across multiple protocols and token types
 
-Verdict must be one of: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
+Verdict must be exactly one of: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
 
 Format your response as:
 VERDICT: [label]
-[2-3 sentences explaining exactly what the data shows]
-What to watch for: [one practical note about interacting with this address]"""
+[2-3 sentences citing the specific numbers from the data above]
+What to watch for: [one practical note for someone interacting with this address]"""
 
             try:
                 answer = run_inference(prompt)
