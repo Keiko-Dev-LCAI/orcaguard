@@ -965,25 +965,46 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
         def _fetch(key, rpc, method, params):
             results[key] = _rpc_call(rpc, method, params)
 
-        def _fetch_etherscan(key):
-            # Get last 20 normal txns from Etherscan (free, no key)
+        ETHERSCAN_KEY = os.environ.get("ETHERSCAN_API_KEY", "")
+        key_param     = f"&apikey={ETHERSCAN_KEY}" if ETHERSCAN_KEY else ""
+
+        def _etherscan_get(action, extra=""):
+            """Fetch from Etherscan; returns list or None on failure."""
             try:
                 url = (
                     "https://api.etherscan.io/api"
-                    "?module=account&action=txlist"
+                    f"?module=account&action={action}"
                     f"&address={address}"
                     "&startblock=0&endblock=99999999"
-                    "&page=1&offset=50&sort=desc"
+                    f"&page=1&offset=50&sort=desc{extra}{key_param}"
                 )
                 req = _ur.Request(url, headers={"User-Agent": "OrcaGuard/1.0"})
                 with _ur.urlopen(req, timeout=10) as r:
                     data = json.loads(r.read())
+                msg = data.get("message", "")
                 if data.get("status") == "1":
-                    results[key] = data.get("result", [])
-                elif data.get("message") == "No transactions found":
-                    results[key] = []
-            except Exception:
-                results[key] = None
+                    return data.get("result", [])
+                if "No transactions" in msg or "No records" in msg:
+                    return []          # confirmed empty, not an error
+                print(f"  [Etherscan/{action}] status={data.get('status')} msg={msg}")
+                return None            # API error / rate-limited
+            except Exception as e:
+                print(f"  [Etherscan/{action}] exception: {e}")
+                return None
+
+        def _fetch_etherscan(key):
+            # Try normal txlist first; fall back to token transfers
+            txlist = _etherscan_get("txlist")
+            if txlist is not None:
+                results[key] = txlist
+                return
+            # txlist failed — try tokentx as a fallback signal
+            tokentx = _etherscan_get("tokentx")
+            if tokentx is not None:
+                # Convert token tx records so DEX check still works
+                # (to address is the router or token contract — less precise but better than nothing)
+                results[key] = tokentx
+            # else: leave as None
 
         fetch_threads = [
             threading.Thread(target=_fetch, args=("eth_code",  ETH_RPC,  "eth_getCode",             [address, "latest"])),
@@ -1109,6 +1130,21 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
             f"{dex_summary}"
         )
 
+        # Skip AI when there's genuinely no data — saves 3 min wait for a useless result
+        no_data = (total_tx == 0 and not etherscan_shows_activity)
+        if no_data:
+            self._send_json({
+                "ok": True,
+                "chainData":    chains,
+                "quickVerdict": quick_verdict,
+                "quickReason":  quick_reason,
+                "dexSummary":   dex_summary,
+                "etherscanUrl": f"https://etherscan.io/address/{address}",
+                "remaining":    remaining + 1,  # didn't use the AI call
+                "noData":       True,
+            })
+            return
+
         prompt = f"""Analyze this crypto wallet address and determine if it is likely a trading bot or a human trader.
 
 Address: {address}
@@ -1116,20 +1152,29 @@ Address: {address}
 On-chain data:
 {chain_summary}
 
-Consider:
-- Smart contracts used as wallets are almost always bots (MEV, sandwich, arbitrage)
-- Repeated calls to DEX router contracts (Uniswap, 1inch, 0x) in short periods = strong bot signal
-- Very high nonce (>1000) strongly suggests automation
-- Low nonce but high DEX activity = likely bot using meta-transactions or a proxy contract
-- Bots often have: identical or near-identical trade sizes, very regular intervals, no token approvals/NFT activity
-- Human DeFi users have diverse activity: approvals, NFT buys, governance votes, not just swaps
+CRITICAL RULES — follow these exactly:
+1. ZERO transactions is NOT evidence of being a bot. Zero means new wallet, unused address, or data unavailable. If all counts are 0 or data is unavailable, you MUST answer UNCLEAR.
+2. Only use the data provided above. Do NOT invent or assume activity that isn't listed.
+3. A BOT verdict requires positive evidence: high transaction count (>1000), smart contract wallet, or many repeated DEX router calls.
+4. If the data is insufficient to make a confident call, say UNCLEAR.
 
-Give a plain-English verdict using one of these labels: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
+Bot signals (only flag if actually present in the data):
+- Smart contract used as a wallet
+- Nonce >1000 (especially if concentrated on a single DEX)
+- Many DEX router calls to the same contract in quick succession
+- No approvals, governance votes, or NFT activity — only swaps
 
-Format your response as:
+Human signals:
+- Low nonce (<100) with diverse transaction types
+- Mix of token approvals, swaps, and other interactions
+- No repeated DEX router patterns
+
+Give a plain-English verdict using one of: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
+
+Format:
 VERDICT: [label]
-[2-3 sentences explaining what the data shows and what it means]
-What to watch for: [one specific thing to be cautious about if interacting with this address]"""
+[2-3 sentences explaining what the data actually shows]
+What to watch for: [one specific note about interacting with this address]"""
 
         import uuid
         job_id = str(uuid.uuid4())[:12]
