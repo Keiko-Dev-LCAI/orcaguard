@@ -954,6 +954,9 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
             "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V4",
             "0xdef1c0ded9bec7f1a1670819833240f027b25eff": "0x Exchange Proxy",
             "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f": "SushiSwap Router",
+            # ERC-4337 Account Abstraction EntryPoints — bots use these to submit automated UserOperations
+            "0x0000000071727de22e5e9d8baf0edac6f37da032": "ERC-4337 EntryPoint v0.7 (AA Bot)",
+            "0x5ff137d4b0fdcd49dcd4dc17ae2aa8f821b42f34": "ERC-4337 EntryPoint v0.6 (AA Bot)",
         }
 
         results = {
@@ -972,8 +975,9 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
             """Fetch txlist or tokentx from Etherscan into results[key]."""
             try:
                 url = (
-                    "https://api.etherscan.io/api"
-                    f"?module=account&action={action}"
+                    "https://api.etherscan.io/v2/api"
+                    "?chainid=1"
+                    f"&module=account&action={action}"
                     f"&address={address}"
                     "&startblock=0&endblock=99999999"
                     f"&page=1&offset=50&sort=desc{key_param}"
@@ -1164,8 +1168,9 @@ What to watch for: [one practical note for someone interacting with this address
         eth_tokens = []
         try:
             url = (
-                "https://api.etherscan.io/api"
-                "?module=account&action=tokentx"
+                "https://api.etherscan.io/v2/api"
+                "?chainid=1"
+                "&module=account&action=tokentx"
                 f"&address={address}"
                 "&startblock=0&endblock=99999999"
                 "&sort=desc&offset=200&page=1"
