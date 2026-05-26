@@ -1134,103 +1134,48 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
             f"{dex_summary}"
         )
 
-        import uuid
-        job_id = str(uuid.uuid4())[:12]
-        with _jobs_lock:
-            _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "bot", "address": address}
+        # Wait for Etherscan thread before responding (it's fast with a real API key)
+        es_thread.join(timeout=12)
 
-        # Capture for closure
-        _es_thread  = es_thread
-        _results    = results
-        _chains     = chains
-        _eth_tx     = eth_tx
-        _lcai_tx    = lcai_tx
-        _eth_c      = eth_contract
-        _lcai_c     = lcai_contract
-        _DEX        = DEX_ROUTERS
+        # Re-compute DEX hits now that Etherscan data may have arrived
+        txlist2   = results.get("eth_txlist") or []
+        total_txl = len(txlist2)
+        dex2      = {}
+        for tx in txlist2:
+            to = (tx.get("to") or "").lower()
+            if to in DEX_ROUTERS:
+                dex2[DEX_ROUTERS[to]] = dex2.get(DEX_ROUTERS[to], 0) + 1
 
-        def _run():
-            # Wait for Etherscan thread to finish (it started before we sent the response)
-            _es_thread.join(timeout=12)
+        if dex2:
+            dex_summary = "DEX router calls in last {} txns: {}".format(
+                total_txl, ", ".join(f"{v}× {k}" for k, v in dex2.items()))
+            # Upgrade verdict if Etherscan revealed bot-like DEX patterns
+            if sum(dex2.values()) >= 5 and quick_verdict not in ("BOT", "LIKELY BOT"):
+                router_names = ", ".join(f"{v}× {k}" for k, v in dex2.items())
+                quick_verdict = "LIKELY BOT"
+                quick_reason  = (
+                    f"Among the last {total_txl} transactions, {sum(dex2.values())} went to DEX routers "
+                    f"({router_names}). Repeatedly hitting the same router is a strong bot pattern."
+                )
+        elif total_txl > 0:
+            dex_summary = f"Last {total_txl} transactions checked — no DEX router calls detected"
+        # else: keep dex_summary as-is from earlier
 
-            txlist2      = _results.get("eth_txlist") or []
-            total_txl    = len(txlist2)
-            dex2         = {}
-            for tx in txlist2:
-                to = (tx.get("to") or "").lower()
-                if to in _DEX:
-                    dex2[_DEX[to]] = dex2.get(_DEX[to], 0) + 1
+        # No AI — return the on-chain verdict directly
+        # Refund the AI call we reserved
+        with _ip_lock:
+            rec = _ip_usage.get(ip)
+            if rec:
+                rec["count"] = max(0, rec["count"] - 1)
 
-            total_tx2 = _eth_tx + _lcai_tx
-            if dex2:
-                dex_line = "DEX router calls in last {} txns: {}".format(
-                    total_txl, ", ".join(f"{v}× {k}" for k, v in dex2.items()))
-            elif total_txl > 0:
-                dex_line = f"Last {total_txl} transactions: no DEX router calls detected"
-            else:
-                dex_line = "Etherscan data unavailable"
-
-            chain_s = (
-                f"Ethereum: {'Smart contract' if _eth_c else 'Regular wallet'}, {_eth_tx:,} transactions (nonce)\n"
-                f"Lightchain: {'Smart contract' if _lcai_c else 'Regular wallet'}, {_lcai_tx:,} transactions\n"
-                f"{dex_line}"
-            )
-
-            # Skip AI if still no data after waiting
-            if total_tx2 == 0 and total_txl == 0:
-                with _jobs_lock:
-                    _jobs[job_id] = {
-                        "status": "done", "ts": time.time(), "type": "bot",
-                        "answer": (
-                            "VERDICT: UNCLEAR\n"
-                            "No transaction data found for this address on Ethereum or Lightchain. "
-                            "This could be a brand new wallet, an address that has only received funds (never sent), "
-                            "or you may have the wrong address. Zero transactions is NOT a sign of a bot.\n"
-                            "What to watch for: Before sending funds to this address, verify it through a separate channel."
-                        )
-                    }
-                return
-
-            prompt = f"""Analyze this crypto wallet address and determine if it is likely a trading bot or a human trader.
-
-Address: {address}
-
-On-chain data:
-{chain_s}
-
-CRITICAL RULES:
-1. ZERO or low transactions is NOT evidence of a bot. Zero means new/unused wallet. If all counts are 0, answer UNCLEAR.
-2. Only use the data above. Do NOT invent activity.
-3. BOT verdict requires actual positive evidence: high nonce (>1000), smart contract wallet, or many repeated DEX router calls.
-4. Insufficient data = UNCLEAR.
-
-Bot signals (only if present): smart contract wallet; nonce >1000; many calls to same DEX router; only swaps, no approvals/NFT/governance.
-Human signals: low nonce with diverse tx types; mix of approvals + swaps + other activity.
-
-Verdict: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
-
-Format:
-VERDICT: [label]
-[2-3 sentences on what the data shows]
-What to watch for: [one specific note]"""
-
-            try:
-                answer = run_inference(prompt)
-                with _jobs_lock:
-                    _jobs[job_id] = {"status": "done", "ts": time.time(), "answer": answer, "type": "bot"}
-            except Exception as e:
-                with _jobs_lock:
-                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
-
-        threading.Thread(target=_run, daemon=True).start()
         self._send_json({
-            "ok": True, "jobId": job_id,
+            "ok": True,
             "chainData":    chains,
             "quickVerdict": quick_verdict,
             "quickReason":  quick_reason,
             "dexSummary":   dex_summary,
             "etherscanUrl": f"https://etherscan.io/address/{address}",
-            "remaining":    remaining,
+            "remaining":    remaining + 1,  # refunded
         })
 
 
