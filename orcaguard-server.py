@@ -1139,6 +1139,13 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
         with _jobs_lock:
             _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "bot", "address": address}
 
+        # Send jobId immediately — everything else runs in background
+        self._send_json({
+            "ok": True, "jobId": job_id,
+            "etherscanUrl": f"https://etherscan.io/address/{address}",
+            "remaining":    remaining,
+        })
+
         # Capture for background thread closure
         _es_thread   = es_thread
         _results     = results
@@ -1229,16 +1236,6 @@ What to watch for: [one practical note about interacting with this address]"""
                     _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
 
         threading.Thread(target=_run, daemon=True).start()
-
-        self._send_json({
-            "ok": True, "jobId": job_id,
-            "chainData":    chains,
-            "quickVerdict": quick_verdict,
-            "quickReason":  quick_reason,
-            "dexSummary":   dex_summary,
-            "etherscanUrl": f"https://etherscan.io/address/{address}",
-            "remaining":    remaining,
-        })
 
 
     def _handle_scan_airdrops(self):
