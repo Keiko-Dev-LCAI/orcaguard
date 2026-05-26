@@ -1106,16 +1106,20 @@ On-chain data collected from Etherscan and RPC nodes:
 RULES you must follow:
 1. Zero transactions is NOT evidence of a bot. A wallet with 0 transactions is new or unused — answer UNCLEAR.
 2. Base your verdict only on the data shown above. Do not invent facts.
-3. BOT verdict requires solid evidence: the address is a smart contract, OR nonce is over 1000, OR 5+ of the last transactions go to the same DEX router repeatedly.
-4. If data is missing or unavailable, acknowledge it and lean toward UNCLEAR.
+3. If data is missing or unavailable, acknowledge it and lean toward UNCLEAR.
+4. Be decisive when the evidence is strong — do not hedge if the data clearly points one way.
 
-What makes a bot:
-- Address deployed as a smart contract (not a regular wallet)
-- Extremely high transaction count (1000+) concentrated on one or two DEX routers
-- Rapid repeated swaps through the same router with no other activity
+DEFINITIVE BOT signals — if any of these are present, verdict is BOT:
+- Address is a smart contract (deployed bytecode)
+- 3 or more transactions in the last 50 going to ERC-4337 EntryPoint contracts — humans do NOT manually submit UserOperations repeatedly; this is always automated
+- Nonce over 1000 with all activity concentrated on one or two routers
 
-What makes a human:
-- Moderate transaction count with a mix of activity types
+LIKELY BOT signals:
+- Majority of transactions going to DEX routers (Uniswap, 1inch, SushiSwap, 0x) with no other activity
+- High nonce (200+) with only swap/trade transactions
+
+Human signals:
+- Low to moderate transaction count with a mix of activity types
 - Token approvals, NFTs, governance votes, transfers — not just swaps
 - Activity spread across multiple protocols and token types
 
