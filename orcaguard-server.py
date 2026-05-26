@@ -774,6 +774,10 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_check_bot()
             return
 
+        if path == "/api/scan-airdrops":
+            self._handle_scan_airdrops()
+            return
+
         self._send_error("Not found", 404)
 
     def _handle_ask(self):
@@ -994,6 +998,163 @@ What to watch for: [one specific thing to be cautious about if interacting with 
 
         threading.Thread(target=_run, daemon=True).start()
         self._send_json({"ok": True, "jobId": job_id, "chainData": chains, "remaining": remaining})
+
+
+    def _handle_scan_airdrops(self):
+        import urllib.request as _ur, urllib.parse as _up
+
+        body    = self._read_body()
+        address = body.get("address", "").strip()
+        if not address:
+            self._send_error("address is required")
+            return
+        if not re.match(r'^0x[0-9a-fA-F]{40}$', address):
+            self._send_error("invalid address format")
+            return
+
+        ip = _get_client_ip(self)
+
+        # ── Scam name patterns ────────────────────────────────────────────
+        SCAM_NAME_PATTERNS = [
+            r'claim', r'reward', r'airdrop', r'bonus', r'free',
+            r'prize', r'win', r'gift', r'voucher', r'cashback',
+            r'refund', r'compensation', r'dividend',
+            r'visit.*to', r'go to', r'www\.', r'\.com', r'\.io', r'\.net',
+            r'\$\d+', r'usd', r'usdt', r'earn',
+        ]
+
+        def _name_looks_suspicious(name, symbol):
+            combined = (name + ' ' + symbol).lower()
+            return any(re.search(p, combined) for p in SCAM_NAME_PATTERNS)
+
+        # ── Fetch token transfers from Etherscan (free, no key needed) ────
+        eth_tokens = []
+        try:
+            url = (
+                "https://api.etherscan.io/api"
+                "?module=account&action=tokentx"
+                f"&address={address}"
+                "&startblock=0&endblock=99999999"
+                "&sort=desc&offset=200&page=1"
+            )
+            req = _ur.Request(url, headers={"User-Agent": "OrcaGuard/1.0"})
+            with _ur.urlopen(req, timeout=12) as r:
+                data = json.loads(r.read())
+            if data.get("status") == "1":
+                seen = {}
+                for tx in data.get("result", []):
+                    to_addr = tx.get("to", "").lower()
+                    contract = tx.get("contractAddress", "").lower()
+                    name     = tx.get("tokenName", "")
+                    symbol   = tx.get("tokenSymbol", "")
+                    # Only tokens RECEIVED (not sent by the user)
+                    if to_addr == address.lower() and contract not in seen:
+                        seen[contract] = True
+                        suspicious = _name_looks_suspicious(name, symbol)
+                        eth_tokens.append({
+                            "contract": contract,
+                            "name":     name,
+                            "symbol":   symbol,
+                            "chain":    "Ethereum",
+                            "suspicious": suspicious,
+                        })
+        except Exception as e:
+            pass  # Etherscan unavailable — return what we have
+
+        # ── Quick result: flag obviously named scams without burning AI ───
+        flagged  = [t for t in eth_tokens if t["suspicious"]]
+        clean    = [t for t in eth_tokens if not t["suspicious"]]
+
+        # If nothing suspicious by name, return immediately (no AI cost)
+        if not flagged:
+            self._send_json({
+                "ok": True,
+                "flagged": [],
+                "clean": len(clean),
+                "total": len(eth_tokens),
+                "aiUsed": False,
+                "message": (
+                    f"Scanned {len(eth_tokens)} tokens your wallet received on Ethereum. "
+                    "None of them have names that match common airdrop scam patterns. "
+                    "That's a good sign — but always be cautious about interacting with tokens you didn't buy."
+                    if eth_tokens else
+                    "No ERC-20 token transfers found for this address on Ethereum."
+                )
+            })
+            return
+
+        # ── For suspicious tokens: check rate limit then run AI ──────────
+        allowed, remaining = _check_ai_limit(ip)
+        if not allowed:
+            # Return pattern-flagged results without AI explanation
+            self._send_json({
+                "ok": True,
+                "flagged": flagged[:10],
+                "clean": len(clean),
+                "total": len(eth_tokens),
+                "aiUsed": False,
+                "limitReached": True,
+                "message": (
+                    f"Found {len(flagged)} suspicious token(s) by name pattern. "
+                    f"AI daily limit reached — showing name-based flags only. Come back tomorrow for AI verdicts."
+                )
+            })
+            return
+
+        # Build AI prompt for the flagged tokens (cap at 8 to keep prompt short)
+        to_analyze = flagged[:8]
+        token_list = "\n".join(
+            f"- {t['name']} ({t['symbol']}) — contract: {t['contract']}"
+            for t in to_analyze
+        )
+        prompt = f"""A crypto wallet has received the following ERC-20 tokens it likely never bought — they were airdropped in.
+Analyze each one and say whether it is likely a SCAM AIRDROP or POSSIBLY LEGITIMATE.
+
+Wallet: {address}
+Tokens received:
+{token_list}
+
+For each token, give:
+TOKEN: [name/symbol]
+VERDICT: SCAM AIRDROP or POSSIBLY LEGITIMATE
+REASON: [1 sentence — what's suspicious or why it might be okay]
+
+After the list, add a SUMMARY section:
+SUMMARY: [2-3 sentences total — overall danger level, and one key warning about what these scam tokens try to get you to do (e.g. visit a website, connect wallet, approve a contract)]"""
+
+        import uuid
+        job_id = str(uuid.uuid4())[:12]
+        with _jobs_lock:
+            _jobs[job_id] = {
+                "status": "pending", "ts": time.time(),
+                "type": "airdrop_scan",
+                "flagged": flagged, "clean": len(clean), "total": len(eth_tokens),
+            }
+
+        def _run():
+            try:
+                answer = run_inference(prompt)
+                with _jobs_lock:
+                    _jobs[job_id] = {
+                        "status": "done", "ts": time.time(),
+                        "answer": answer,
+                        "type": "airdrop_scan",
+                        "flagged": flagged[:10],
+                        "clean": len(clean),
+                        "total": len(eth_tokens),
+                    }
+            except Exception as e:
+                with _jobs_lock:
+                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
+
+        threading.Thread(target=_run, daemon=True).start()
+        self._send_json({
+            "ok": True,
+            "jobId": job_id,
+            "flaggedCount": len(flagged),
+            "total": len(eth_tokens),
+            "remaining": remaining,
+        })
 
 
 # ════════════════════════════════════════════════════════════════════════
