@@ -19,93 +19,94 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
-  .header { background: rgba(0,0,0,0.4); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; }
-  .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+  .header { background: rgba(0,0,0,0.4); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; }
+  .header-logo-img { height: 52px; width: 52px; border-radius: 10px; object-fit: cover; }
+  .logo { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
   .logo span { color: var(--cyan); }
-  .logo-sub { font-size: 12px; color: var(--muted); }
-  .header-badge { margin-left: auto; background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .logo-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .header-badge { margin-left: auto; background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
 
-  .layout { display: flex; min-height: calc(100vh - 53px); }
-  .sidebar { width: 220px; flex-shrink: 0; background: rgba(0,0,0,0.2); border-right: 1px solid var(--border); padding: 16px 0; position: sticky; top: 53px; height: calc(100vh - 53px); overflow-y: auto; }
-  .sidebar-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 16px 8px; margin-top: 8px; }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; font-size: 13px; color: var(--muted); border-left: 3px solid transparent; transition: all 0.15s; }
+  .layout { display: flex; min-height: calc(100vh - 69px); }
+  .sidebar { width: 270px; flex-shrink: 0; background: rgba(0,0,0,0.2); border-right: 1px solid var(--border); padding: 20px 0; position: sticky; top: 69px; height: calc(100vh - 69px); overflow-y: auto; }
+  .sidebar-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 20px 10px; margin-top: 12px; }
+  .nav-item { display: flex; align-items: center; gap: 14px; padding: 13px 20px; cursor: pointer; font-size: 16px; color: var(--muted); border-left: 3px solid transparent; transition: all 0.15s; }
   .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
   .nav-item.active { background: rgba(0,212,255,0.08); color: var(--cyan); border-left-color: var(--cyan); }
-  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-icon { font-size: 20px; width: 26px; text-align: center; }
 
-  .main { flex: 1; padding: 32px; max-width: 800px; }
+  .main { flex: 1; padding: 40px 48px; }
 
   .page { display: none; }
   .page.active { display: block; }
 
-  .page-title { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
-  .page-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+  .page-title { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+  .page-sub { font-size: 16px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
 
-  .check-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .check-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .check-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+  .check-label { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
 
-  .input-row { display: flex; gap: 10px; }
-  .check-input { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; color: var(--text); font-size: 14px; font-family: monospace; outline: none; transition: border-color 0.15s; }
+  .input-row { display: flex; gap: 12px; }
+  .check-input { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; color: var(--text); font-size: 15px; font-family: monospace; outline: none; transition: border-color 0.15s; }
   .check-input:focus { border-color: var(--cyan); }
   .check-input::placeholder { color: var(--muted); }
-  .check-btn { background: var(--cyan); color: #000; border: none; border-radius: 8px; padding: 12px 22px; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+  .check-btn { background: var(--cyan); color: #000; border: none; border-radius: 8px; padding: 14px 28px; font-weight: 700; font-size: 15px; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
   .check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .check-btn:hover:not(:disabled) { opacity: 0.85; }
 
-  .result-box { margin-top: 14px; border-radius: 10px; padding: 16px 18px; display: none; }
+  .result-box { margin-top: 16px; border-radius: 12px; padding: 20px 22px; display: none; }
   .result-safe { background: rgba(0,230,118,0.07); border: 1px solid rgba(0,230,118,0.3); }
   .result-caution { background: rgba(255,170,0,0.07); border: 1px solid rgba(255,170,0,0.3); }
   .result-danger { background: rgba(255,68,68,0.07); border: 1px solid rgba(255,68,68,0.3); }
   .result-pending { background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2); }
   .result-invalid { background: rgba(255,170,0,0.07); border: 1px solid rgba(255,170,0,0.2); }
-  .verdict-badge { display: inline-block; font-size: 13px; font-weight: 800; margin-bottom: 8px; }
-  .result-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
-  .result-links { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
-  .result-link { font-size: 12px; color: var(--cyan); text-decoration: none; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); border-radius: 4px; padding: 3px 8px; }
+  .verdict-badge { display: inline-block; font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+  .result-text { font-size: 15px; line-height: 1.7; white-space: pre-wrap; }
+  .result-links { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .result-link { font-size: 13px; color: var(--cyan); text-decoration: none; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); border-radius: 4px; padding: 4px 10px; }
   .result-link:hover { background: rgba(0,212,255,0.2); }
 
-  .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
-  .info-card-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-  .info-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 6px; }
-  .info-card code { color: var(--cyan); font-family: monospace; font-size: 12px; background: rgba(0,212,255,0.08); padding: 2px 6px; border-radius: 4px; word-break: break-all; }
+  .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; margin-bottom: 16px; }
+  .info-card-title { font-weight: 700; font-size: 17px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .info-card p { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 8px; }
+  .info-card code { color: var(--cyan); font-family: monospace; font-size: 13px; background: rgba(0,212,255,0.08); padding: 3px 8px; border-radius: 4px; word-break: break-all; }
 
-  .warning-banner { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
-  .warning-banner-title { font-weight: 700; color: #ff6666; margin-bottom: 6px; font-size: 14px; }
-  .warning-banner p { font-size: 13px; color: #cc8888; line-height: 1.5; }
+  .warning-banner { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; }
+  .warning-banner-title { font-weight: 700; color: #ff6666; margin-bottom: 8px; font-size: 16px; }
+  .warning-banner p { font-size: 15px; color: #cc8888; line-height: 1.6; }
 
-  .safe-banner { background: rgba(0,230,118,0.07); border: 1px solid rgba(0,230,118,0.25); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
-  .safe-banner-title { font-weight: 700; color: var(--green); margin-bottom: 6px; font-size: 14px; }
-  .safe-banner p { font-size: 13px; color: #88bb99; line-height: 1.5; }
+  .safe-banner { background: rgba(0,230,118,0.07); border: 1px solid rgba(0,230,118,0.25); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+  .safe-banner-title { font-weight: 700; color: var(--green); margin-bottom: 8px; font-size: 16px; }
+  .safe-banner p { font-size: 15px; color: #88bb99; line-height: 1.6; }
   .safe-banner a { color: var(--cyan); }
 
-  .scam-list { list-style: none; display: grid; gap: 8px; }
-  .scam-list li { background: rgba(255,68,68,0.06); border: 1px solid rgba(255,68,68,0.2); border-radius: 8px; padding: 10px 14px; font-size: 13px; display: flex; align-items: flex-start; gap: 10px; }
-  .scam-list li .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-  .scam-list li .desc { color: #cc9999; line-height: 1.5; }
+  .scam-list { list-style: none; display: grid; gap: 10px; }
+  .scam-list li { background: rgba(255,68,68,0.06); border: 1px solid rgba(255,68,68,0.2); border-radius: 10px; padding: 14px 18px; font-size: 15px; display: flex; align-items: flex-start; gap: 14px; }
+  .scam-list li .icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .scam-list li .desc { color: #cc9999; line-height: 1.6; }
   .scam-list li strong { color: #ff8888; }
 
   /* AI Chat */
-  .ai-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-  .ai-messages { height: 360px; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .ai-msg { max-width: 85%; padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+  .ai-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .ai-messages { height: 420px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .ai-msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 15px; line-height: 1.7; white-space: pre-wrap; }
   .ai-msg.bot { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.15); align-self: flex-start; color: var(--text); }
   .ai-msg.user { background: rgba(255,255,255,0.06); border: 1px solid var(--border); align-self: flex-end; color: var(--text); }
-  .ai-input-row { border-top: 1px solid var(--border); padding: 12px; display: flex; gap: 8px; }
-  .ai-input { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 13px; outline: none; resize: none; height: 42px; font-family: inherit; }
+  .ai-input-row { border-top: 1px solid var(--border); padding: 14px; display: flex; gap: 10px; }
+  .ai-input { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; color: var(--text); font-size: 15px; outline: none; resize: none; height: 46px; font-family: inherit; }
   .ai-input:focus { border-color: var(--cyan); }
-  .ai-send { background: var(--cyan); color: #000; border: none; border-radius: 8px; padding: 10px 18px; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .ai-send { background: var(--cyan); color: #000; border: none; border-radius: 8px; padding: 12px 22px; font-weight: 700; font-size: 15px; cursor: pointer; }
   .ai-send:disabled { opacity: 0.5; }
 
   @media (max-width: 640px) {
     .sidebar { display: none; }
-    .main { padding: 16px; }
+    .main { padding: 20px; }
   }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <img src="orca-icon.png" style="height:32px" alt="OrcaGuard" onerror="this.style.display='none'">
+  <img src="orca-icon.png" class="header-logo-img" alt="OrcaGuard" onerror="this.style.display='none'">
   <div>
     <div class="logo">Orca<span>Guard</span></div>
     <div class="logo-sub">Crypto Safety Assistant</div>
