@@ -770,6 +770,10 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_check_url()
             return
 
+        if path == "/api/check-bot":
+            self._handle_check_bot()
+            return
+
         self._send_error("Not found", 404)
 
     def _handle_ask(self):
@@ -902,6 +906,94 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
 
         threading.Thread(target=_run, daemon=True).start()
         self._send_json({"ok": True, "quick": False, "jobId": job_id})
+
+    def _handle_check_bot(self):
+        body    = self._read_body()
+        address = body.get("address", "").strip()
+        if not address:
+            self._send_error("address is required")
+            return
+        if not re.match(r'^0x[0-9a-fA-F]{40}$', address):
+            self._send_error("invalid address format")
+            return
+
+        # Rate limit check
+        ip = _get_client_ip(self)
+        allowed, remaining = _check_ai_limit(ip)
+        if not allowed:
+            self._send_json({"ok": False, "limitReached": True,
+                             "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
+            return
+
+        # On-chain lookup — check Ethereum and Lightchain
+        def _rpc_call(rpc_url, method, params):
+            try:
+                import urllib.request as _ur
+                payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
+                req = _ur.Request(rpc_url, data=payload, headers={"Content-Type": "application/json"})
+                with _ur.urlopen(req, timeout=8) as r:
+                    return json.loads(r.read()).get("result", None)
+            except Exception:
+                return None
+
+        ETH_RPC  = "https://eth.llamarpc.com"
+        LCAI_RPC = "https://rpc.mainnet.lightchain.ai"
+
+        chains = {}
+        for chain, rpc in [("Ethereum", ETH_RPC), ("Lightchain", LCAI_RPC)]:
+            code     = _rpc_call(rpc, "eth_getCode", [address, "latest"])
+            tx_hex   = _rpc_call(rpc, "eth_getTransactionCount", [address, "latest"])
+            is_contract = bool(code and len(code) > 4)
+            tx_count    = int(tx_hex, 16) if tx_hex else 0
+            chains[chain] = {"is_contract": is_contract, "tx_count": tx_count}
+
+        eth  = chains.get("Ethereum",  {})
+        lcai = chains.get("Lightchain", {})
+
+        chain_summary = (
+            f"Ethereum: {'Smart contract' if eth.get('is_contract') else 'Regular wallet'}, "
+            f"{eth.get('tx_count', 0):,} transactions\n"
+            f"Lightchain: {'Smart contract' if lcai.get('is_contract') else 'Regular wallet'}, "
+            f"{lcai.get('tx_count', 0):,} transactions"
+        )
+
+        prompt = f"""Analyze this crypto wallet address and determine if it is likely a trading bot or a human trader.
+
+Address: {address}
+
+On-chain data:
+{chain_summary}
+
+Consider:
+- Smart contracts on Ethereum/Lightchain are often used as bot interfaces (MEV bots, sandwich bots, arbitrage bots)
+- Very high transaction counts (thousands/day) strongly suggest automation
+- Low tx counts on both chains could mean a new wallet, inactive human, or a bot that routes through a contract
+- Some legitimate power users have high tx counts (active DeFi traders)
+- Bots typically have very regular timing patterns and interact repeatedly with the same DEX contracts
+
+Give a plain-English verdict using one of these labels: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
+
+Format your response as:
+VERDICT: [label]
+[2-3 sentences explaining what the data shows and what it means]
+What to watch for: [one specific thing to be cautious about if interacting with this address]"""
+
+        import uuid
+        job_id = str(uuid.uuid4())[:12]
+        with _jobs_lock:
+            _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "bot", "address": address}
+
+        def _run():
+            try:
+                answer = run_inference(prompt)
+                with _jobs_lock:
+                    _jobs[job_id] = {"status": "done", "ts": time.time(), "answer": answer, "type": "bot"}
+            except Exception as e:
+                with _jobs_lock:
+                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
+
+        threading.Thread(target=_run, daemon=True).start()
+        self._send_json({"ok": True, "jobId": job_id, "chainData": chains, "remaining": remaining})
 
 
 # ════════════════════════════════════════════════════════════════════════
