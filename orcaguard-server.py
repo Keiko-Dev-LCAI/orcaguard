@@ -1006,15 +1006,19 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
                 results[key] = tokentx
             # else: leave as None
 
-        fetch_threads = [
-            threading.Thread(target=_fetch, args=("eth_code",  ETH_RPC,  "eth_getCode",             [address, "latest"])),
-            threading.Thread(target=_fetch, args=("eth_tx",    ETH_RPC,  "eth_getTransactionCount", [address, "latest"])),
-            threading.Thread(target=_fetch, args=("lcai_code", LCAI_RPC, "eth_getCode",             [address, "latest"])),
-            threading.Thread(target=_fetch, args=("lcai_tx",   LCAI_RPC, "eth_getTransactionCount", [address, "latest"])),
-            threading.Thread(target=_fetch_etherscan, args=("eth_txlist",)),
+        # Start RPC threads (fast — respond to user immediately after these)
+        rpc_threads = [
+            threading.Thread(target=_fetch, args=("eth_code",  ETH_RPC,  "eth_getCode",             [address, "latest"]), daemon=True),
+            threading.Thread(target=_fetch, args=("eth_tx",    ETH_RPC,  "eth_getTransactionCount", [address, "latest"]), daemon=True),
+            threading.Thread(target=_fetch, args=("lcai_code", LCAI_RPC, "eth_getCode",             [address, "latest"]), daemon=True),
+            threading.Thread(target=_fetch, args=("lcai_tx",   LCAI_RPC, "eth_getTransactionCount", [address, "latest"]), daemon=True),
         ]
-        for t in fetch_threads: t.start()
-        for t in fetch_threads: t.join(timeout=12)
+        # Start Etherscan thread separately — it runs in background, picked up by AI job
+        es_thread = threading.Thread(target=_fetch_etherscan, args=("eth_txlist",), daemon=True)
+        for t in rpc_threads: t.start()
+        es_thread.start()
+        # Wait only for fast RPC calls before responding
+        for t in rpc_threads: t.join(timeout=8)
 
         eth_contract  = bool(results["eth_code"]  and len(results["eth_code"])  > 4)
         eth_tx        = int(results["eth_tx"],  16) if results["eth_tx"]  else 0
@@ -1130,58 +1134,86 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
             f"{dex_summary}"
         )
 
-        # Skip AI when there's genuinely no data — saves 3 min wait for a useless result
-        no_data = (total_tx == 0 and not etherscan_shows_activity)
-        if no_data:
-            self._send_json({
-                "ok": True,
-                "chainData":    chains,
-                "quickVerdict": quick_verdict,
-                "quickReason":  quick_reason,
-                "dexSummary":   dex_summary,
-                "etherscanUrl": f"https://etherscan.io/address/{address}",
-                "remaining":    remaining + 1,  # didn't use the AI call
-                "noData":       True,
-            })
-            return
-
-        prompt = f"""Analyze this crypto wallet address and determine if it is likely a trading bot or a human trader.
-
-Address: {address}
-
-On-chain data:
-{chain_summary}
-
-CRITICAL RULES — follow these exactly:
-1. ZERO transactions is NOT evidence of being a bot. Zero means new wallet, unused address, or data unavailable. If all counts are 0 or data is unavailable, you MUST answer UNCLEAR.
-2. Only use the data provided above. Do NOT invent or assume activity that isn't listed.
-3. A BOT verdict requires positive evidence: high transaction count (>1000), smart contract wallet, or many repeated DEX router calls.
-4. If the data is insufficient to make a confident call, say UNCLEAR.
-
-Bot signals (only flag if actually present in the data):
-- Smart contract used as a wallet
-- Nonce >1000 (especially if concentrated on a single DEX)
-- Many DEX router calls to the same contract in quick succession
-- No approvals, governance votes, or NFT activity — only swaps
-
-Human signals:
-- Low nonce (<100) with diverse transaction types
-- Mix of token approvals, swaps, and other interactions
-- No repeated DEX router patterns
-
-Give a plain-English verdict using one of: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
-
-Format:
-VERDICT: [label]
-[2-3 sentences explaining what the data actually shows]
-What to watch for: [one specific note about interacting with this address]"""
-
         import uuid
         job_id = str(uuid.uuid4())[:12]
         with _jobs_lock:
             _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "bot", "address": address}
 
+        # Capture for closure
+        _es_thread  = es_thread
+        _results    = results
+        _chains     = chains
+        _eth_tx     = eth_tx
+        _lcai_tx    = lcai_tx
+        _eth_c      = eth_contract
+        _lcai_c     = lcai_contract
+        _DEX        = DEX_ROUTERS
+
         def _run():
+            # Wait for Etherscan thread to finish (it started before we sent the response)
+            _es_thread.join(timeout=12)
+
+            txlist2      = _results.get("eth_txlist") or []
+            total_txl    = len(txlist2)
+            dex2         = {}
+            for tx in txlist2:
+                to = (tx.get("to") or "").lower()
+                if to in _DEX:
+                    dex2[_DEX[to]] = dex2.get(_DEX[to], 0) + 1
+
+            total_tx2 = _eth_tx + _lcai_tx
+            if dex2:
+                dex_line = "DEX router calls in last {} txns: {}".format(
+                    total_txl, ", ".join(f"{v}× {k}" for k, v in dex2.items()))
+            elif total_txl > 0:
+                dex_line = f"Last {total_txl} transactions: no DEX router calls detected"
+            else:
+                dex_line = "Etherscan data unavailable"
+
+            chain_s = (
+                f"Ethereum: {'Smart contract' if _eth_c else 'Regular wallet'}, {_eth_tx:,} transactions (nonce)\n"
+                f"Lightchain: {'Smart contract' if _lcai_c else 'Regular wallet'}, {_lcai_tx:,} transactions\n"
+                f"{dex_line}"
+            )
+
+            # Skip AI if still no data after waiting
+            if total_tx2 == 0 and total_txl == 0:
+                with _jobs_lock:
+                    _jobs[job_id] = {
+                        "status": "done", "ts": time.time(), "type": "bot",
+                        "answer": (
+                            "VERDICT: UNCLEAR\n"
+                            "No transaction data found for this address on Ethereum or Lightchain. "
+                            "This could be a brand new wallet, an address that has only received funds (never sent), "
+                            "or you may have the wrong address. Zero transactions is NOT a sign of a bot.\n"
+                            "What to watch for: Before sending funds to this address, verify it through a separate channel."
+                        )
+                    }
+                return
+
+            prompt = f"""Analyze this crypto wallet address and determine if it is likely a trading bot or a human trader.
+
+Address: {address}
+
+On-chain data:
+{chain_s}
+
+CRITICAL RULES:
+1. ZERO or low transactions is NOT evidence of a bot. Zero means new/unused wallet. If all counts are 0, answer UNCLEAR.
+2. Only use the data above. Do NOT invent activity.
+3. BOT verdict requires actual positive evidence: high nonce (>1000), smart contract wallet, or many repeated DEX router calls.
+4. Insufficient data = UNCLEAR.
+
+Bot signals (only if present): smart contract wallet; nonce >1000; many calls to same DEX router; only swaps, no approvals/NFT/governance.
+Human signals: low nonce with diverse tx types; mix of approvals + swaps + other activity.
+
+Verdict: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
+
+Format:
+VERDICT: [label]
+[2-3 sentences on what the data shows]
+What to watch for: [one specific note]"""
+
             try:
                 answer = run_inference(prompt)
                 with _jobs_lock:
