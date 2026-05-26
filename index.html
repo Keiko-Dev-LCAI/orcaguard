@@ -782,26 +782,12 @@ async function checkBot() {
     if (d.limitReached) {
       showResult('botResult', 'caution', d.error, []);
     } else if (d.jobId) {
-      // Show on-chain verdict immediately, AI result refines it in background
-      const cd = d.chainData || {};
-      const eth  = cd['Ethereum']   || {};
-      const lcai = cd['Lightchain'] || {};
-      const chainLine = [
-        'Ethereum: ' + (eth.is_contract  ? '🔲 Smart contract' : '👤 Regular wallet') + ', ' + (eth.tx_count  || 0).toLocaleString() + ' txns',
-        'Lightchain: ' + (lcai.is_contract ? '🔲 Smart contract' : '👤 Regular wallet') + ', ' + (lcai.tx_count || 0).toLocaleString() + ' txns',
-        (d.dexSummary || ''),
-      ].filter(Boolean).join('\n');
       const esUrl = d.etherscanUrl || '';
-      const quickText = 'VERDICT: ' + (d.quickVerdict || '…') + '\n' + (d.quickReason || '') + '\n\n' + chainLine + '\n\n⏳ AI is adding analysis via Lightchain AIVM…';
-      showResult('botResult', guessVerdict(d.quickVerdict || ''), quickText, esUrl ? [esUrl] : []);
+      showResult('botResult', 'pending', '⏳ Checking on-chain activity and running AI analysis via Lightchain AIVM…', null);
       btn.disabled = false; btn.textContent = 'Check for Bot';
-
       pollJob(d.jobId,
-        answer => showResult('botResult', guessVerdict(answer), answer + '\n\n' + chainLine, esUrl ? [esUrl] : []),
-        err    => {
-          const current = document.querySelector('#botResult .result-text');
-          if (current) current.textContent = current.textContent.replace('⏳ AI is adding analysis via Lightchain AIVM…', '(AI unavailable — on-chain verdict above)');
-        }
+        answer => showResult('botResult', guessVerdict(answer), answer, esUrl ? [esUrl] : []),
+        err    => showResult('botResult', 'caution', 'Analysis failed: ' + err, esUrl ? [esUrl] : [])
       );
       return;
     } else if (d.error) {
