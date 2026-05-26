@@ -614,6 +614,44 @@ def quick_url_check(url: str) -> dict:
     return {"verdict": "unknown", "known": False}
 
 # ════════════════════════════════════════════════════════════════════════
+# AI RATE LIMITER — 5 AIVM calls per IP per day
+# ════════════════════════════════════════════════════════════════════════
+
+AI_DAILY_LIMIT = 5
+_ip_usage      = {}   # { ip: {"count": N, "date": "YYYY-MM-DD"} }
+_ip_lock       = threading.Lock()
+
+def _get_client_ip(handler) -> str:
+    """Get real IP, respecting Railway's X-Forwarded-For proxy header."""
+    forwarded = handler.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return handler.client_address[0]
+
+def _check_ai_limit(ip: str) -> tuple[bool, int]:
+    """Returns (allowed, remaining). Deducts 1 on success."""
+    today = time.strftime("%Y-%m-%d")
+    with _ip_lock:
+        rec = _ip_usage.get(ip)
+        if rec is None or rec["date"] != today:
+            _ip_usage[ip] = {"count": 0, "date": today}
+            rec = _ip_usage[ip]
+        remaining = AI_DAILY_LIMIT - rec["count"]
+        if remaining <= 0:
+            return False, 0
+        rec["count"] += 1
+        return True, remaining - 1
+
+def _peek_ai_remaining(ip: str) -> int:
+    """Check remaining without deducting."""
+    today = time.strftime("%Y-%m-%d")
+    with _ip_lock:
+        rec = _ip_usage.get(ip)
+        if rec is None or rec["date"] != today:
+            return AI_DAILY_LIMIT
+        return max(0, AI_DAILY_LIMIT - rec["count"])
+
+# ════════════════════════════════════════════════════════════════════════
 # HTTP SERVER
 # ════════════════════════════════════════════════════════════════════════
 
@@ -744,6 +782,13 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error("question too long (max 3000 chars)")
             return
 
+        ip = _get_client_ip(self)
+        allowed, remaining = _check_ai_limit(ip)
+        if not allowed:
+            self._send_json({"ok": False, "limitReached": True,
+                             "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
+            return
+
         import uuid
         job_id = str(uuid.uuid4())[:12]
         with _jobs_lock:
@@ -764,7 +809,7 @@ class Handler(BaseHTTPRequestHandler):
                         del _jobs[k]
 
         threading.Thread(target=_run, daemon=True).start()
-        self._send_json({"ok": True, "jobId": job_id})
+        self._send_json({"ok": True, "jobId": job_id, "remaining": remaining})
 
     def _handle_check_contract(self):
         body    = self._read_body()
@@ -778,7 +823,15 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"ok": True, "quick": True, **quick})
             return
 
-        # Unknown contract — use AIVM for analysis
+        # Unknown contract — check rate limit before using AIVM
+        ip = _get_client_ip(self)
+        allowed, remaining = _check_ai_limit(ip)
+        if not allowed:
+            self._send_json({"ok": False, "limitReached": True,
+                             "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
+            return
+
+        # Use AIVM for analysis
         prompt = f"""A user wants to know if this contract address is safe to interact with:
 
 Contract address: {address}
@@ -812,6 +865,14 @@ Please analyze this address. Check if it matches any known legitimate projects. 
         quick = quick_url_check(url)
         if quick["known"] and quick["verdict"] != "unknown":
             self._send_json({"ok": True, "quick": True, **quick})
+            return
+
+        # Unknown URL — check rate limit before using AIVM
+        ip = _get_client_ip(self)
+        allowed, remaining = _check_ai_limit(ip)
+        if not allowed:
+            self._send_json({"ok": False, "limitReached": True,
+                             "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
             return
 
         prompt = f"""A user wants to know if this website is safe to connect their crypto wallet to:
