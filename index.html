@@ -131,6 +131,9 @@
     <div class="nav-item" onclick="showPage('scams')" id="nav-scams">
       <span class="nav-icon">🚨</span>Common Scams
     </div>
+    <div class="nav-item" onclick="showPage('tips')" id="nav-tips">
+      <span class="nav-icon">💡</span>Tips &amp; Help
+    </div>
     <div class="sidebar-label">AI Assistant</div>
     <div class="nav-item" onclick="showPage('ask')" id="nav-ask">
       <span class="nav-icon">🤖</span>Ask OrcaGuard
@@ -319,6 +322,115 @@
           <div class="desc"><strong>Unlimited Token Approvals</strong> — A dApp asks to approve spending of unlimited tokens. This gives the contract permission to take everything in your wallet at any time. Only approve the exact amount you need, or use a trusted revoke tool to cancel old approvals.</div>
         </li>
       </ul>
+    </div>
+
+    <!-- TIPS & HELP -->
+    <div class="page" id="page-tips">
+      <div class="page-title">💡 Tips &amp; Help</div>
+      <div class="page-sub">Stuck connecting your wallet? Confused by gas fees? These are the most common problems crypto holders run into — and how to fix them.</div>
+
+      <!-- WALLET CONNECTION -->
+      <div class="info-card" style="border-color:rgba(0,212,255,0.2)">
+        <div class="info-card-title">🔌 Can't Connect Your Wallet to a Lightchain Site?</div>
+        <p>This is one of the most common issues, especially on mobile. Desktop browsers handle wallet connections differently than phones, and some sites don't support all methods equally.</p>
+        <div style="display:grid;gap:10px;margin-top:14px">
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">✅ Use the built-in browser inside your wallet app</div>
+            <p style="margin:0">The most reliable fix. In <strong style="color:#fff">Trust Wallet</strong>: tap the browser icon at the bottom → type the site address. In <strong style="color:#fff">MetaMask mobile</strong>: tap the menu → Browser. These browsers connect automatically because the wallet is already built in.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">🖥️ On desktop — try a different browser</div>
+            <p style="margin:0">If MetaMask isn't connecting in Chrome, try Firefox (or vice versa). Sometimes browser extensions conflict. Also try disabling other extensions temporarily.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">🔄 Disconnect and reconnect</div>
+            <p style="margin:0">In your wallet app, go to Settings → Connected Sites (or Wallet Connect) and disconnect from the site. Then try connecting again from scratch. A stale connection is a very common cause of this problem.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">🌐 Make sure you're on the right network</div>
+            <p style="margin:0">Lightchain dApps (bridge, governance, workers) require <strong style="color:#fff">Lightchain Mainnet</strong>. Uniswap requires <strong style="color:#fff">Ethereum Mainnet</strong>. If your wallet is on the wrong network the site will either refuse to connect or show strange errors. Switch networks inside your wallet before connecting.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">🗑️ Clear your browser cache</div>
+            <p style="margin:0">Sometimes old cached data causes connection failures. In Chrome: Settings → Privacy → Clear browsing data → Cached images and files. Then reload the page and try again.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAS FEES -->
+      <div class="info-card" style="border-color:rgba(255,170,0,0.2)">
+        <div class="info-card-title">⛽ Understanding Gas Fees</div>
+        <p>Gas is the fee you pay to the network to process your transaction. Think of it like a tip to the validators who keep the network running. On Ethereum, gas is paid in ETH — and it can get expensive.</p>
+        <div style="display:grid;gap:10px;margin-top:14px">
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">💸 Ethereum gas can be $5 to $50+ for one transaction</div>
+            <p style="margin:0">Gas prices change constantly based on network demand. During busy periods (big news, market moves, NFT drops) fees spike dramatically. A simple token swap that costs $3 one day might cost $40 the next.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">⏱️ You can wait for gas to come down</div>
+            <p style="margin:0">There's no rush. Gas fees are usually lower on <strong style="color:#fff">weekends</strong> and <strong style="color:#fff">late at night (US Eastern time)</strong> when fewer people are transacting. Check current fees at <a href="https://etherscan.io/gastracker" target="_blank" style="color:var(--cyan)">etherscan.io/gastracker</a> before you transact. If the fee seems high, come back in a few hours.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">🟢 Gas on Lightchain Mainnet is very cheap</div>
+            <p style="margin:0">Once you bridge your LCAI to Lightchain Mainnet, transactions there cost a tiny fraction of a cent in native LCAI. Bridging itself (on Ethereum) still costs Ethereum gas — but after that, you're on a much cheaper network.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">⚠️ Don't set gas too low</div>
+            <p style="margin:0">Some wallets let you manually set gas. If you set it too low, your transaction will sit pending forever or eventually fail — and you may still lose the gas fee. Stick with the wallet's recommended setting unless you know what you're doing.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIPPAGE -->
+      <div class="info-card" style="border-color:rgba(0,230,118,0.2)">
+        <div class="info-card-title">📊 What Is Slippage — and How to Set It</div>
+        <p>Slippage is the difference between the price you expect to pay and the price you actually pay when your transaction goes through. Crypto prices move constantly, so by the time your transaction is confirmed, the price may have shifted slightly.</p>
+        <div style="display:grid;gap:10px;margin-top:14px">
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">🎯 Recommended slippage for LCAI on Uniswap: 1–2%</div>
+            <p style="margin:0">On Uniswap, click the gear icon (⚙️) and set slippage to 1% or 2%. This means you're OK paying up to 2% more than the quoted price. If the price moves more than that before your transaction confirms, it will automatically cancel (protecting you from a bad fill).</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">❌ Transaction keeps failing? Try raising slippage</div>
+            <p style="margin:0">If your swap transaction keeps failing or reverting, the most common fix is to increase slippage to 3–5%. This gives the transaction more room to go through even if the price moves. Just know that higher slippage means you might get a slightly worse price.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">🚨 Never set slippage above 10–15%</div>
+            <p style="margin:0">Very high slippage leaves you vulnerable to "sandwich attacks" where bots see your pending transaction, buy the token first to push the price up, let your transaction fill at the worse price, then sell. Keep slippage reasonable.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRUST WALLET TIPS -->
+      <div class="info-card">
+        <div class="info-card-title">📱 Trust Wallet Tips</div>
+        <div style="display:grid;gap:10px;margin-top:10px">
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">Can't see your LCAI after an update?</div>
+            <p style="margin:0">After Trust Wallet updates, tokens sometimes get hidden. Tap the icon in the top right to manage your token list. Look for a show/hide toggle next to LCAI and make sure it's visible. If you don't see it, search by the contract address: <code style="color:var(--cyan);font-size:12px">0x9cA8530CA349c966Fe9ef903Df17a75B8A778927</code></p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">Always require signature for transactions</div>
+            <p style="margin:0">In Trust Wallet settings, make sure transaction signing is required — meaning the app asks you to confirm before any transaction goes out. This is your last line of defense against a bad approval. Never approve a transaction you didn't initiate.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px">Use the in-app browser for Lightchain sites</div>
+            <p style="margin:0">As mentioned above — if you're having trouble connecting on mobile, the Trust Wallet browser (tap the compass/browser icon) will connect to Lightchain sites reliably without any extra setup.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- GENERAL SAFETY TIPS -->
+      <div class="info-card">
+        <div class="info-card-title">🛡️ General Safety Reminders</div>
+        <div style="display:grid;gap:8px;margin-top:10px">
+          <div style="font-size:15px;color:var(--text);line-height:1.6">✅ Bookmark the official sites — never navigate to them from a search engine result or link in a message.</div>
+          <div style="font-size:15px;color:var(--text);line-height:1.6">✅ On large transactions, always send a small test amount first and confirm it arrived before sending the rest.</div>
+          <div style="font-size:15px;color:var(--text);line-height:1.6">✅ Check the URL in your browser bar every time before you connect your wallet — one character difference is a phishing site.</div>
+          <div style="font-size:15px;color:var(--text);line-height:1.6">✅ Revoke old token approvals regularly using a trusted revoke tool like <a href="https://revoke.cash" target="_blank" style="color:var(--cyan)">revoke.cash</a>. Unlimited approvals are a security risk.</div>
+          <div style="font-size:15px;color:var(--text);line-height:1.6">✅ Your seed phrase and private key are never needed by any legitimate website. If a site asks for them — leave immediately.</div>
+        </div>
+      </div>
     </div>
 
     <!-- ASK ORCAGUARD -->
