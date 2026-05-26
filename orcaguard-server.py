@@ -944,81 +944,169 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
         ETH_RPC  = "https://eth.llamarpc.com"
         LCAI_RPC = "https://rpc.mainnet.lightchain.ai"
 
+        # Known DEX router contracts on Ethereum
+        DEX_ROUTERS = {
+            "0x7a250d5630b4cf539739df2c5dacb4c659f2488d": "Uniswap V2 Router",
+            "0xe592427a0aece92de3edee1f18e0157c05861564": "Uniswap V3 Router",
+            "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad": "Uniswap Universal Router",
+            "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": "Uniswap V3 Router 2",
+            "0x1111111254eeb25477b68fb85ed929f73a960582": "1inch V5",
+            "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V4",
+            "0xdef1c0ded9bec7f1a1670819833240f027b25eff": "0x Exchange Proxy",
+            "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f": "SushiSwap Router",
+        }
+
         results = {
             "eth_code": None, "eth_tx": None,
             "lcai_code": None, "lcai_tx": None,
+            "eth_txlist": None,
         }
+
         def _fetch(key, rpc, method, params):
             results[key] = _rpc_call(rpc, method, params)
+
+        def _fetch_etherscan(key):
+            # Get last 20 normal txns from Etherscan (free, no key)
+            try:
+                url = (
+                    "https://api.etherscan.io/api"
+                    "?module=account&action=txlist"
+                    f"&address={address}"
+                    "&startblock=0&endblock=99999999"
+                    "&page=1&offset=50&sort=desc"
+                )
+                req = _ur.Request(url, headers={"User-Agent": "OrcaGuard/1.0"})
+                with _ur.urlopen(req, timeout=10) as r:
+                    data = json.loads(r.read())
+                if data.get("status") == "1":
+                    results[key] = data.get("result", [])
+                elif data.get("message") == "No transactions found":
+                    results[key] = []
+            except Exception:
+                results[key] = None
 
         fetch_threads = [
             threading.Thread(target=_fetch, args=("eth_code",  ETH_RPC,  "eth_getCode",             [address, "latest"])),
             threading.Thread(target=_fetch, args=("eth_tx",    ETH_RPC,  "eth_getTransactionCount", [address, "latest"])),
             threading.Thread(target=_fetch, args=("lcai_code", LCAI_RPC, "eth_getCode",             [address, "latest"])),
             threading.Thread(target=_fetch, args=("lcai_tx",   LCAI_RPC, "eth_getTransactionCount", [address, "latest"])),
+            threading.Thread(target=_fetch_etherscan, args=("eth_txlist",)),
         ]
         for t in fetch_threads: t.start()
-        for t in fetch_threads: t.join(timeout=10)
+        for t in fetch_threads: t.join(timeout=12)
 
         eth_contract  = bool(results["eth_code"]  and len(results["eth_code"])  > 4)
         eth_tx        = int(results["eth_tx"],  16) if results["eth_tx"]  else 0
         lcai_contract = bool(results["lcai_code"] and len(results["lcai_code"]) > 4)
         lcai_tx       = int(results["lcai_tx"], 16) if results["lcai_tx"] else 0
 
+        # Analyze Etherscan transaction list for DEX activity
+        txlist         = results["eth_txlist"] or []
+        total_txlist   = len(txlist)            # how many of the last 50 we got
+        dex_hits       = {}                     # router_name -> count
+        unique_to      = set()
+        error_tx_count = 0
+        for tx in txlist:
+            to = (tx.get("to") or "").lower()
+            if to in DEX_ROUTERS:
+                name = DEX_ROUTERS[to]
+                dex_hits[name] = dex_hits.get(name, 0) + 1
+            unique_to.add(to)
+            if tx.get("isError") == "0":
+                pass
+            else:
+                error_tx_count += 1
+
+        # Use the Etherscan total count if nonce is missing/zero
+        # Etherscan returns up to 50; if all 50 returned, actual count is likely much higher
+        etherscan_shows_activity = total_txlist > 0
+        is_high_dex_activity     = sum(dex_hits.values()) >= 5
+        is_concentrated_dex      = len(dex_hits) == 1 and sum(dex_hits.values()) >= 3  # all to same router
+
+        # Build enriched tx count — use nonce if available, else infer from Etherscan
+        if eth_tx == 0 and total_txlist > 0:
+            # nonce call may have failed; use Etherscan count as floor
+            eth_tx = total_txlist  # at minimum this many
+
         chains = {
             "Ethereum":   {"is_contract": eth_contract,  "tx_count": eth_tx},
             "Lightchain": {"is_contract": lcai_contract, "tx_count": lcai_tx},
         }
-
-        # Quick rules-based verdict (returned immediately — no AI needed for clear cases)
         total_tx = eth_tx + lcai_tx
+
+        # Quick rules-based verdict (returned immediately, no AI needed)
         if eth_contract or lcai_contract:
             quick_verdict = "LIKELY BOT"
             quick_reason  = (
                 f"This address is a smart contract on "
-                f"{'Ethereum' if eth_contract else 'Lightchain'} "
-                f"with {total_tx:,} total transactions. Smart contracts used as "
-                f"wallet addresses are almost always automated bots (MEV, arbitrage, or sandwich bots)."
+                f"{'Ethereum' if eth_contract else 'Lightchain'}. "
+                f"Smart contracts used as wallet addresses are almost always automated bots "
+                f"(MEV, arbitrage, or sandwich bots)."
+            )
+        elif is_high_dex_activity or is_concentrated_dex:
+            router_names = ", ".join(f"{v}× {k}" for k, v in dex_hits.items())
+            quick_verdict = "LIKELY BOT"
+            quick_reason  = (
+                f"Among the last {total_txlist} transactions, {sum(dex_hits.values())} went to DEX routers "
+                f"({router_names}). Bots repeatedly hit the same router contracts — humans spread activity across different types of transactions."
             )
         elif total_tx > 10000:
             quick_verdict = "BOT"
             quick_reason  = (
-                f"{total_tx:,} total transactions across Ethereum and Lightchain. "
-                f"This level of activity is far beyond typical human trading — almost certainly automated."
+                f"{total_tx:,} total transactions. Far beyond typical human trading volume — almost certainly automated."
             )
         elif total_tx > 1000:
             quick_verdict = "LIKELY BOT"
             quick_reason  = (
-                f"{total_tx:,} total transactions. High activity suggests automation, "
-                f"though some very active DeFi traders could reach this count."
+                f"{total_tx:,} total transactions. High activity strongly suggests automation."
             )
-        elif total_tx > 100:
+        elif dex_hits and total_txlist > 0:
+            router_names = ", ".join(f"{v}× {k}" for k, v in dex_hits.items())
             quick_verdict = "UNCLEAR"
             quick_reason  = (
-                f"{total_tx:,} total transactions. Could be an active human trader "
-                f"or a less-active bot. On-chain data alone is inconclusive."
+                f"Some DEX router activity ({router_names}) in the last {total_txlist} transactions. "
+                f"Could be an active human DeFi user or a less-active bot. Hard to tell from count alone."
             )
-        elif total_tx == 0:
+        elif total_tx == 0 and not etherscan_shows_activity:
             quick_verdict = "UNCLEAR"
             quick_reason  = (
-                "No transactions found on Ethereum or Lightchain for this address. "
-                "It may be a new wallet, an unused address, or the RPC nodes may be slow today."
+                "No transaction data found on Ethereum or Lightchain. "
+                "May be a new wallet, an address that hasn't sent transactions, or RPC data is unavailable — "
+                "check Etherscan directly for the full picture."
             )
-        else:
+        elif total_tx < 50:
             quick_verdict = "LIKELY HUMAN"
             quick_reason  = (
-                f"{total_tx:,} total transactions. Low activity is more consistent "
-                f"with a regular human wallet than an automated bot."
+                f"{total_tx:,} total transactions with no concentrated DEX router activity. "
+                f"Low activity is more consistent with a regular human wallet."
             )
+        else:
+            quick_verdict = "UNCLEAR"
+            quick_reason  = (
+                f"{total_tx:,} total transactions. Neither clearly bot-like nor clearly human — "
+                f"check Etherscan for timing patterns to be sure."
+            )
+
+        # Build DEX activity summary line for prompt + display
+        if dex_hits:
+            dex_summary = "DEX router calls in last {} txns: {}".format(
+                total_txlist,
+                ", ".join(f"{v}× {k}" for k, v in dex_hits.items())
+            )
+        elif etherscan_shows_activity:
+            dex_summary = f"Last {total_txlist} transactions: no DEX router calls detected"
+        else:
+            dex_summary = "Etherscan data unavailable — nonce-based count only"
 
         eth  = chains.get("Ethereum",  {})
         lcai = chains.get("Lightchain", {})
 
         chain_summary = (
             f"Ethereum: {'Smart contract' if eth.get('is_contract') else 'Regular wallet'}, "
-            f"{eth.get('tx_count', 0):,} transactions\n"
+            f"{eth.get('tx_count', 0):,} transactions (nonce)\n"
             f"Lightchain: {'Smart contract' if lcai.get('is_contract') else 'Regular wallet'}, "
-            f"{lcai.get('tx_count', 0):,} transactions"
+            f"{lcai.get('tx_count', 0):,} transactions\n"
+            f"{dex_summary}"
         )
 
         prompt = f"""Analyze this crypto wallet address and determine if it is likely a trading bot or a human trader.
@@ -1029,11 +1117,12 @@ On-chain data:
 {chain_summary}
 
 Consider:
-- Smart contracts on Ethereum/Lightchain are often used as bot interfaces (MEV bots, sandwich bots, arbitrage bots)
-- Very high transaction counts (thousands/day) strongly suggest automation
-- Low tx counts on both chains could mean a new wallet, inactive human, or a bot that routes through a contract
-- Some legitimate power users have high tx counts (active DeFi traders)
-- Bots typically have very regular timing patterns and interact repeatedly with the same DEX contracts
+- Smart contracts used as wallets are almost always bots (MEV, sandwich, arbitrage)
+- Repeated calls to DEX router contracts (Uniswap, 1inch, 0x) in short periods = strong bot signal
+- Very high nonce (>1000) strongly suggests automation
+- Low nonce but high DEX activity = likely bot using meta-transactions or a proxy contract
+- Bots often have: identical or near-identical trade sizes, very regular intervals, no token approvals/NFT activity
+- Human DeFi users have diverse activity: approvals, NFT buys, governance votes, not just swaps
 
 Give a plain-English verdict using one of these labels: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
 
@@ -1059,10 +1148,12 @@ What to watch for: [one specific thing to be cautious about if interacting with 
         threading.Thread(target=_run, daemon=True).start()
         self._send_json({
             "ok": True, "jobId": job_id,
-            "chainData": chains,
+            "chainData":    chains,
             "quickVerdict": quick_verdict,
             "quickReason":  quick_reason,
-            "remaining": remaining,
+            "dexSummary":   dex_summary,
+            "etherscanUrl": f"https://etherscan.io/address/{address}",
+            "remaining":    remaining,
         })
 
 
