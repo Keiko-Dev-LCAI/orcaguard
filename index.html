@@ -643,10 +643,21 @@ function showResult(boxId, verdict, content, links) {
 // ── Poll job ──────────────────────────────────────────────────────────
 async function pollJob(jobId, onDone, onError, maxWait = 360000) {
   const start = Date.now();
+  let notFoundStreak = 0;
   while (Date.now() - start < maxWait) {
     await new Promise(r => setTimeout(r, 3000));
     try {
       const r = await fetch(BACKEND_URL + '/api/job?id=' + jobId);
+      if (r.status === 404) {
+        // Job not found — server may have restarted
+        notFoundStreak++;
+        if (notFoundStreak >= 3) {
+          onError('Server restarted while processing — please try again.');
+          return;
+        }
+        continue;
+      }
+      notFoundStreak = 0;
       const d = await r.json();
       if (d.status === 'done') { onDone(d.answer); return; }
       if (d.status === 'error') { onError(d.error || 'Unknown error'); return; }
@@ -771,11 +782,27 @@ async function checkBot() {
     if (d.limitReached) {
       showResult('botResult', 'caution', d.error, []);
     } else if (d.jobId) {
-      showResult('botResult', 'pending', '⏳ Analyzing with AI — this takes about 60-90 seconds...', null);
+      // Show quick rules-based verdict immediately — no waiting
+      const cd = d.chainData || {};
+      const eth  = cd['Ethereum']   || {};
+      const lcai = cd['Lightchain'] || {};
+      const chainLine = [
+        'Ethereum: ' + (eth.is_contract  ? '🔲 Smart contract' : '👤 Regular wallet') + ', ' + (eth.tx_count  || 0).toLocaleString() + ' txns',
+        'Lightchain: ' + (lcai.is_contract ? '🔲 Smart contract' : '👤 Regular wallet') + ', ' + (lcai.tx_count || 0).toLocaleString() + ' txns',
+      ].join('\n');
+      const quickText = 'VERDICT: ' + (d.quickVerdict || '…') + '\n' + (d.quickReason || '') + '\n\n' + chainLine + '\n\n⏳ AI is refining this verdict in the background…';
+      showResult('botResult', guessVerdict(d.quickVerdict || ''), quickText, []);
+      btn.disabled = false; btn.textContent = 'Check for Bot';
+
       pollJob(d.jobId,
-        answer => showResult('botResult', guessVerdict(answer), answer, []),
-        err    => showResult('botResult', 'caution', 'Analysis failed: ' + err, [])
+        answer => showResult('botResult', guessVerdict(answer), answer + '\n\n' + chainLine, []),
+        err    => {
+          // Keep quick verdict visible, append error note
+          const current = document.querySelector('#botResult .result-text');
+          if (current) current.textContent = current.textContent.replace('⏳ AI is refining this verdict in the background…', '⚠️ AI analysis failed: ' + err);
+        }
       );
+      return; // btn already re-enabled above
     } else if (d.error) {
       showResult('botResult', 'caution', d.error, []);
     }
