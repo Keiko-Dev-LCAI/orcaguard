@@ -298,6 +298,14 @@
 
         <div id="auditChecks" style="display:grid;gap:10px;margin-bottom:20px"></div>
 
+        <!-- Airdrop Scanner -->
+        <div class="check-box" style="margin-bottom:20px">
+          <div class="check-label">🪂 Airdrop Scam Scanner</div>
+          <div style="font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.6">Scammers airdrop fake tokens into wallets to trick you into visiting phishing sites or approving malicious contracts. This scanner checks all ERC-20 tokens your wallet ever received on Ethereum and flags anything suspicious.</div>
+          <button class="check-btn" id="airdropScanBtn" onclick="scanAirdrops()">Scan for Scam Tokens</button>
+          <div id="airdropResult" style="margin-top:16px"></div>
+        </div>
+
         <div class="info-card" style="border-color:rgba(0,212,255,0.2)">
           <div class="info-card-title">🔍 Check Your Token Approvals</div>
           <p>Token approvals are permissions you've given to smart contracts to spend your tokens. Old or unlimited approvals are a security risk — a compromised contract could drain your wallet.</p>
@@ -838,13 +846,10 @@ function guessVerdict(text) {
 }
 
 // ── Wallet Audit ────────────────────────────────────────────────────────
+let _auditAddress = '';
 const NETWORKS = {
-  '0x1':    { name: 'Ethereum Mainnet', ok: true,  color: 'var(--green)' },
+  '0x1':    { name: 'Ethereum Mainnet',  ok: true, color: 'var(--green)' },
   '0x23f0': { name: 'Lightchain Mainnet', ok: true, color: 'var(--cyan)' },
-  '0x5':    { name: 'Goerli Testnet', ok: false, color: 'var(--yellow)' },
-  '0x89':   { name: 'Polygon', ok: false, color: 'var(--yellow)' },
-  '0x38':   { name: 'BNB Chain', ok: false, color: 'var(--yellow)' },
-  '0xa4b1': { name: 'Arbitrum', ok: false, color: 'var(--yellow)' },
 };
 const LCAI_CONTRACT = '0x9cA8530CA349c966Fe9ef903Df17a75B8A778927';
 
@@ -884,6 +889,7 @@ async function connectWalletAudit() {
     }
 
     // Display
+    _auditAddress = address;
     document.getElementById('auditAddress').textContent = address.slice(0,8) + '...' + address.slice(-6);
     document.getElementById('auditConnectBox').style.display = 'none';
     document.getElementById('auditResults').style.display = 'block';
@@ -934,6 +940,125 @@ async function connectWalletAudit() {
   }
 }
 
+async function scanAirdrops() {
+  if (!_auditAddress) {
+    alert('Connect your wallet first.');
+    return;
+  }
+  const btn = document.getElementById('airdropScanBtn');
+  const out  = document.getElementById('airdropResult');
+  btn.disabled = true;
+  btn.textContent = 'Scanning…';
+  out.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:10px 0">⏳ Fetching token history from Ethereum… this may take a few seconds.</div>';
+
+  try {
+    const r = await fetch(API + '/api/scan-airdrops', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: _auditAddress }),
+    });
+    const d = await r.json();
+
+    if (d.limitReached) {
+      out.innerHTML = '<div style="color:var(--yellow);font-size:14px;padding:10px 0">⚠️ ' + (d.message || 'AI daily limit reached.') + '</div>';
+      if (d.flagged && d.flagged.length) {
+        out.innerHTML += _renderFlaggedTokens(d.flagged, false);
+      }
+      btn.disabled = false;
+      btn.textContent = 'Scan for Scam Tokens';
+      return;
+    }
+
+    if (!d.ok) {
+      out.innerHTML = '<div style="color:var(--red);font-size:14px;padding:10px 0">Error: ' + (d.error || 'Unknown error') + '</div>';
+      btn.disabled = false;
+      btn.textContent = 'Scan for Scam Tokens';
+      return;
+    }
+
+    // No AI job needed — instant result
+    if (!d.jobId) {
+      out.innerHTML = _renderScanResult(null, d);
+      btn.disabled = false;
+      btn.textContent = 'Scan Again';
+      return;
+    }
+
+    // Poll for AI result
+    out.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:10px 0">⏳ AI is analyzing ' + d.flaggedCount + ' suspicious token(s)… (job ' + d.jobId + ')</div>';
+    for (let i = 0; i < 60; i++) {
+      await new Promise(res => setTimeout(res, 3000));
+      const jr = await fetch(API + '/api/job?id=' + d.jobId);
+      const jd = await jr.json();
+      if (jd.status === 'done') {
+        out.innerHTML = _renderScanResult(jd.answer, jd);
+        btn.disabled = false;
+        btn.textContent = 'Scan Again';
+        return;
+      }
+      if (jd.status === 'error') {
+        out.innerHTML = '<div style="color:var(--red);font-size:14px;padding:10px 0">AI error: ' + (jd.error || 'unknown') + '</div>';
+        btn.disabled = false;
+        btn.textContent = 'Scan for Scam Tokens';
+        return;
+      }
+    }
+    out.innerHTML = '<div style="color:var(--yellow);font-size:14px;padding:10px 0">Timed out waiting for AI. Try again.</div>';
+    btn.disabled = false;
+    btn.textContent = 'Scan for Scam Tokens';
+  } catch(e) {
+    out.innerHTML = '<div style="color:var(--red);font-size:14px;padding:10px 0">Error: ' + e.message + '</div>';
+    btn.disabled = false;
+    btn.textContent = 'Scan for Scam Tokens';
+  }
+}
+
+function _renderFlaggedTokens(tokens, withBorder) {
+  if (!tokens || !tokens.length) return '';
+  return '<div style="display:grid;gap:8px;margin-top:10px">' +
+    tokens.map(t =>
+      '<div style="background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.25);border-radius:8px;padding:12px 14px">' +
+      '<div style="font-weight:700;color:#ff8888;font-size:14px">⚠️ ' + (t.name || '?') + ' (' + (t.symbol || '?') + ')</div>' +
+      '<div style="font-size:12px;color:var(--muted);margin-top:4px;font-family:monospace;word-break:break-all">' + t.contract + '</div>' +
+      '</div>'
+    ).join('') +
+  '</div>';
+}
+
+function _renderScanResult(aiText, data) {
+  const total   = data.total || 0;
+  const clean   = data.clean || 0;
+  const flagged = data.flagged || [];
+  const msg     = data.message || '';
+
+  let html = '';
+
+  if (total === 0) {
+    return '<div style="background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.25);border-radius:10px;padding:16px 18px;font-size:14px;color:#88bb99;margin-top:8px">✅ No ERC-20 token transfers found for this address on Ethereum. Nothing to flag.</div>';
+  }
+
+  if (!flagged.length) {
+    return '<div style="background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.25);border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.6;margin-top:8px">' +
+      '<div style="font-weight:700;color:var(--green);margin-bottom:6px">✅ No scam tokens detected by name</div>' +
+      '<div style="color:#88bb99">' + (msg || ('Scanned ' + total + ' token(s). None matched known scam name patterns.')) + '</div>' +
+      '</div>';
+  }
+
+  // Header summary
+  html += '<div style="background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.3);border-radius:10px;padding:16px 18px;margin-top:8px">' +
+    '<div style="font-weight:700;color:#ff6666;font-size:15px;margin-bottom:8px">⚠️ Found ' + flagged.length + ' suspicious token(s) out of ' + total + ' scanned</div>';
+
+  if (aiText) {
+    html += '<div style="font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap;margin-bottom:12px">' + aiText + '</div>';
+  }
+
+  html += _renderFlaggedTokens(flagged, false);
+  html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,68,68,0.2);font-size:13px;color:#cc8888;line-height:1.6">⛔ <strong>Do NOT</strong> interact with these tokens, visit any website shown in their name, or approve any contract they ask you to approve. The safest move is to ignore them completely.</div>';
+  html += '</div>';
+
+  return html;
+}
+
 async function switchAuditNetwork(hexChainId, name) {
   const btn = hexChainId === '0x1'
     ? document.getElementById('auditSwitchEth')
@@ -974,11 +1099,15 @@ async function switchAuditNetwork(hexChainId, name) {
 }
 
 function disconnectAudit() {
+  _auditAddress = '';
   document.getElementById('auditConnectBox').style.display = 'block';
   document.getElementById('auditResults').style.display = 'none';
   document.getElementById('auditConnectBtn').disabled = false;
   document.getElementById('auditConnectBtn').textContent = 'Connect Wallet';
   document.getElementById('auditConnectError').style.display = 'none';
+  document.getElementById('airdropResult').innerHTML = '';
+  document.getElementById('airdropScanBtn').disabled = false;
+  document.getElementById('airdropScanBtn').textContent = 'Scan for Scam Tokens';
 }
 </script>
 </body>
