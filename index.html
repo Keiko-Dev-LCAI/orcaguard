@@ -789,17 +789,18 @@ async function checkBot() {
       const chainLine = [
         'Ethereum: ' + (eth.is_contract  ? '🔲 Smart contract' : '👤 Regular wallet') + ', ' + (eth.tx_count  || 0).toLocaleString() + ' txns',
         'Lightchain: ' + (lcai.is_contract ? '🔲 Smart contract' : '👤 Regular wallet') + ', ' + (lcai.tx_count || 0).toLocaleString() + ' txns',
-      ].join('\n');
-      const quickText = 'VERDICT: ' + (d.quickVerdict || '…') + '\n' + (d.quickReason || '') + '\n\n' + chainLine + '\n\n⏳ AI is refining this verdict in the background…';
-      showResult('botResult', guessVerdict(d.quickVerdict || ''), quickText, []);
+        (d.dexSummary || ''),
+      ].filter(Boolean).join('\n');
+      const esUrl = d.etherscanUrl || '';
+      const quickText = 'VERDICT: ' + (d.quickVerdict || '…') + '\n' + (d.quickReason || '') + '\n\n' + chainLine + '\n\n⏳ AI is refining this verdict…';
+      showResult('botResult', guessVerdict(d.quickVerdict || ''), quickText, esUrl ? [esUrl] : []);
       btn.disabled = false; btn.textContent = 'Check for Bot';
 
       pollJob(d.jobId,
-        answer => showResult('botResult', guessVerdict(answer), answer + '\n\n' + chainLine, []),
+        answer => showResult('botResult', guessVerdict(answer), answer + '\n\n' + chainLine, esUrl ? [esUrl] : []),
         err    => {
-          // Keep quick verdict visible, append error note
           const current = document.querySelector('#botResult .result-text');
-          if (current) current.textContent = current.textContent.replace('⏳ AI is refining this verdict in the background…', '⚠️ AI analysis failed: ' + err);
+          if (current) current.textContent = current.textContent.replace('⏳ AI is refining this verdict…', '⚠️ AI: ' + err);
         }
       );
       return; // btn already re-enabled above
