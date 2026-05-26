@@ -12,7 +12,7 @@ Protects non-technical crypto users from scams:
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import json, os, threading, time, secrets, base64, re
+import json, os, threading, time, secrets, base64, re, socketserver
 from urllib.parse import urlparse, parse_qs
 
 PORT = int(os.environ.get("PORT", 8186))
@@ -636,7 +636,9 @@ if __name__ == "__main__":
         print(f"  AI: Lightchain AIVM (wallet {aivm._account.address})")
     else:
         print("  AI: UNAVAILABLE — set LIGHTCHAIN_PRIVATE_KEY to enable")
-    server = HTTPServer(("0.0.0.0", PORT), Handler)
+    class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+        daemon_threads = True
+    server = ThreadedHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"  Ready: http://localhost:{PORT}")
     try:
         server.serve_forever()
