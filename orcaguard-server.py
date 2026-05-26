@@ -1134,48 +1134,110 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
             f"{dex_summary}"
         )
 
-        # Wait for Etherscan thread before responding (it's fast with a real API key)
-        es_thread.join(timeout=12)
+        import uuid
+        job_id = str(uuid.uuid4())[:12]
+        with _jobs_lock:
+            _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "bot", "address": address}
 
-        # Re-compute DEX hits now that Etherscan data may have arrived
-        txlist2   = results.get("eth_txlist") or []
-        total_txl = len(txlist2)
-        dex2      = {}
-        for tx in txlist2:
-            to = (tx.get("to") or "").lower()
-            if to in DEX_ROUTERS:
-                dex2[DEX_ROUTERS[to]] = dex2.get(DEX_ROUTERS[to], 0) + 1
+        # Capture for background thread closure
+        _es_thread   = es_thread
+        _results     = results
+        _eth_tx      = eth_tx
+        _lcai_tx     = lcai_tx
+        _eth_c       = eth_contract
+        _lcai_c      = lcai_contract
+        _DEX         = DEX_ROUTERS
 
-        if dex2:
-            dex_summary = "DEX router calls in last {} txns: {}".format(
-                total_txl, ", ".join(f"{v}× {k}" for k, v in dex2.items()))
-            # Upgrade verdict if Etherscan revealed bot-like DEX patterns
-            if sum(dex2.values()) >= 5 and quick_verdict not in ("BOT", "LIKELY BOT"):
-                router_names = ", ".join(f"{v}× {k}" for k, v in dex2.items())
-                quick_verdict = "LIKELY BOT"
-                quick_reason  = (
-                    f"Among the last {total_txl} transactions, {sum(dex2.values())} went to DEX routers "
-                    f"({router_names}). Repeatedly hitting the same router is a strong bot pattern."
-                )
-        elif total_txl > 0:
-            dex_summary = f"Last {total_txl} transactions checked — no DEX router calls detected"
-        # else: keep dex_summary as-is from earlier
+        def _run():
+            # Wait for Etherscan to finish (already running in background)
+            _es_thread.join(timeout=12)
 
-        # No AI — return the on-chain verdict directly
-        # Refund the AI call we reserved
-        with _ip_lock:
-            rec = _ip_usage.get(ip)
-            if rec:
-                rec["count"] = max(0, rec["count"] - 1)
+            txlist2   = _results.get("eth_txlist") or []
+            total_txl = len(txlist2)
+            dex2      = {}
+            for tx in txlist2:
+                to = (tx.get("to") or "").lower()
+                if to in _DEX:
+                    dex2[_DEX[to]] = dex2.get(_DEX[to], 0) + 1
+
+            total_tx2 = _eth_tx + _lcai_tx
+
+            if dex2:
+                dex_line = "DEX router calls in last {} txns: {}".format(
+                    total_txl, ", ".join(f"{v}× {k}" for k, v in dex2.items()))
+            elif total_txl > 0:
+                dex_line = f"Last {total_txl} transactions: no DEX router calls"
+            else:
+                dex_line = "Etherscan data unavailable"
+
+            # Skip AI if there's genuinely nothing to analyze
+            if total_tx2 == 0 and total_txl == 0:
+                with _jobs_lock:
+                    _jobs[job_id] = {
+                        "status": "done", "ts": time.time(), "type": "bot",
+                        "answer": (
+                            "VERDICT: UNCLEAR\n"
+                            "No transaction history found for this address on Ethereum or Lightchain. "
+                            "This is a new or unused wallet — zero transactions is not a bot signal. "
+                            "Double-check the address is correct, or check Etherscan directly.\n"
+                            "What to watch for: Verify the address through a separate channel before sending any funds."
+                        )
+                    }
+                return
+
+            chain_s = (
+                f"Ethereum: {'Smart contract' if _eth_c else 'Regular wallet'}, {_eth_tx:,} transactions (nonce)\n"
+                f"Lightchain: {'Smart contract' if _lcai_c else 'Regular wallet'}, {_lcai_tx:,} transactions\n"
+                f"{dex_line}"
+            )
+
+            prompt = f"""Analyze this Ethereum wallet address and determine if it is likely a trading bot or a human trader.
+
+Address: {address}
+
+On-chain data:
+{chain_s}
+
+STRICT RULES — you must follow these:
+1. Zero or low transactions means the wallet is new or inactive — NOT a bot. If all counts are 0, answer UNCLEAR only.
+2. Only draw conclusions from the data above. Do not invent or assume anything not listed.
+3. BOT verdict requires real evidence: smart contract wallet, nonce >1000, or many repeated DEX router calls.
+4. Insufficient data = UNCLEAR.
+
+Strong bot signals (only if present in data above):
+- Address is a smart contract
+- Nonce >1000 concentrated on one DEX router
+- 5+ of the last transactions are to the same DEX router
+
+Human signals:
+- Low nonce with diverse activity
+- Mix of token approvals, swaps, NFTs, governance
+
+Verdict must be one of: BOT / LIKELY BOT / UNCLEAR / LIKELY HUMAN / HUMAN
+
+Format your response as:
+VERDICT: [label]
+[2-3 sentences explaining exactly what the data shows]
+What to watch for: [one practical note about interacting with this address]"""
+
+            try:
+                answer = run_inference(prompt)
+                with _jobs_lock:
+                    _jobs[job_id] = {"status": "done", "ts": time.time(), "answer": answer, "type": "bot"}
+            except Exception as e:
+                with _jobs_lock:
+                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
+
+        threading.Thread(target=_run, daemon=True).start()
 
         self._send_json({
-            "ok": True,
+            "ok": True, "jobId": job_id,
             "chainData":    chains,
             "quickVerdict": quick_verdict,
             "quickReason":  quick_reason,
             "dexSummary":   dex_summary,
             "etherscanUrl": f"https://etherscan.io/address/{address}",
-            "remaining":    remaining + 1,  # refunded
+            "remaining":    remaining,
         })
 
 
