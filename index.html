@@ -231,6 +231,16 @@
         <div class="result-box" id="walletResult"></div>
       </div>
 
+      <div class="check-box" style="margin-top:24px">
+        <div class="check-label">🤖 Trading Bot Detector</div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:12px;line-height:1.6">Paste any wallet address to check if it looks like a trading bot. OrcaGuard will check on-chain activity on both Ethereum and Lightchain, then give you a plain-English verdict.</div>
+        <div class="input-row">
+          <input class="check-input" id="botInput" placeholder="0x..." />
+          <button class="check-btn" id="botBtn" onclick="checkBot()">Check for Bot</button>
+        </div>
+        <div class="result-box" id="botResult"></div>
+      </div>
+
       <div class="info-card">
         <div class="info-card-title">💡 Always verify before you send</div>
         <p>Malware on your computer can silently replace wallet addresses you copy from the clipboard. You copy one address, paste a different one. Always check the first 6 and last 6 characters of the address in your wallet app before confirming.</p>
@@ -718,6 +728,43 @@ function checkWallet() {
   const last6  = addr.slice(-6);
   showResult('walletResult', 'safe',
     'This is a properly formatted wallet address.\n\n✅ Format: Valid (0x + 40 hex characters)\n\n⚠️ Important: OrcaGuard can verify the format but cannot guarantee this is the intended recipient. Before sending:\n\n1. Confirm the address with the recipient through a separate channel\n2. Check first 6 characters: ' + first6 + '\n3. Check last 6 characters: ' + last6 + '\n4. On large amounts, send a small test transaction first', []);
+}
+
+// ── Bot Detector ───────────────────────────────────────────────────────
+async function checkBot() {
+  const input = document.getElementById('botInput').value.trim();
+  const btn   = document.getElementById('botBtn');
+  if (!input) return;
+
+  if (!input.match(/^0x[0-9a-fA-F]{40}$/)) {
+    showResult('botResult', 'invalid', 'That doesn\'t look like a valid wallet address. It should start with 0x and be 42 characters long.', []);
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Checking...';
+  showResult('botResult', 'pending', '⏳ Checking on-chain activity...', null);
+
+  try {
+    const r = await fetch(BACKEND_URL + '/api/check-bot', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({address: input})
+    });
+    const d = await r.json();
+    if (d.limitReached) {
+      showResult('botResult', 'caution', d.error, []);
+    } else if (d.jobId) {
+      showResult('botResult', 'pending', '⏳ Analyzing with AI — this takes about 60-90 seconds...', null);
+      pollJob(d.jobId,
+        answer => showResult('botResult', guessVerdict(answer), answer, []),
+        err    => showResult('botResult', 'caution', 'Analysis failed: ' + err, [])
+      );
+    } else if (d.error) {
+      showResult('botResult', 'caution', d.error, []);
+    }
+  } catch (e) {
+    showResult('botResult', 'caution', 'Could not reach server. Try again in a moment.', []);
+  }
+  btn.disabled = false; btn.textContent = 'Check for Bot';
 }
 
 // ── Ask OrcaGuard ──────────────────────────────────────────────────────
