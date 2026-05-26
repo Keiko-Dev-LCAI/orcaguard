@@ -12,7 +12,7 @@ Protects non-technical crypto users from scams:
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import json, os, threading, time, secrets, base64, re, socketserver
+import json, os, threading, time, secrets, base64, re
 from urllib.parse import urlparse, parse_qs
 
 PORT = int(os.environ.get("PORT", 8186))
@@ -199,7 +199,10 @@ class AIVMClient:
 
         # 1. Get JWT
         nonce_resp = requests.get(f"{self.GATEWAY}/auth/nonce?address={self._account.address}", timeout=10)
-        nonce = nonce_resp.json()["nonce"]
+        nonce_data = nonce_resp.json()
+        if "nonce" not in nonce_data:
+            raise Exception(f"AIVM auth/nonce failed (HTTP {nonce_resp.status_code}): {nonce_data}")
+        nonce = nonce_data["nonce"]
         msg   = f"Sign this message to authenticate with Lightchain AIVM\nNonce: {nonce}"
         sig   = self._account.sign_message(
             Web3.solidity_keccak(["string"], [f"\x19Ethereum Signed Message:\n{len(msg)}{msg}"]) if False
@@ -208,7 +211,10 @@ class AIVMClient:
         jwt_resp = requests.post(f"{self.GATEWAY}/auth/login",
                                  json={"address": self._account.address, "signature": sig.signature.hex()},
                                  timeout=10)
-        token = jwt_resp.json()["token"]
+        jwt_data = jwt_resp.json()
+        if "token" not in jwt_data:
+            raise Exception(f"AIVM auth/login failed (HTTP {jwt_resp.status_code}): {jwt_data}")
+        token = jwt_data["token"]
 
         # 2. ECDH key exchange
         ephemeral_key = generate_private_key(__import__("cryptography.hazmat.primitives.asymmetric.ec",
@@ -631,22 +637,13 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
 
 if __name__ == "__main__":
     print(f"OrcaGuard backend starting on port {PORT}...")
-
-    # Start HTTP server FIRST so Railway health check passes immediately
-    class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
-        daemon_threads = True
-    server = ThreadedHTTPServer(("0.0.0.0", PORT), Handler)
-    print(f"  Ready: http://0.0.0.0:{PORT}")
-
-    # Init AIVM in background thread — don't block startup
-    def _init_aivm():
-        aivm = get_aivm_client_cached()
-        if aivm:
-            print(f"  AI: Lightchain AIVM (wallet {aivm._account.address})")
-        else:
-            print("  AI: UNAVAILABLE — set LIGHTCHAIN_PRIVATE_KEY to enable")
-    threading.Thread(target=_init_aivm, daemon=True).start()
-
+    aivm = get_aivm_client_cached()
+    if aivm:
+        print(f"  AI: Lightchain AIVM (wallet {aivm._account.address})")
+    else:
+        print("  AI: UNAVAILABLE — set LIGHTCHAIN_PRIVATE_KEY to enable")
+    server = HTTPServer(("0.0.0.0", PORT), Handler)
+    print(f"  Ready: http://localhost:{PORT}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
