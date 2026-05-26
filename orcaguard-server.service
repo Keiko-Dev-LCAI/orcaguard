@@ -1,0 +1,15 @@
+[Unit]
+Description=OrcaGuard Wallet Safety Backend
+After=network.target
+
+[Service]
+Type=simple
+User=keiko
+WorkingDirectory=/home/keiko/Desktop/orcaguard
+ExecStart=/usr/bin/python3 /home/keiko/Desktop/orcaguard/orcaguard-server.py
+Restart=on-failure
+RestartSec=5
+Environment=LIGHTCHAIN_PRIVATE_KEY=
+
+[Install]
+WantedBy=multi-user.target
