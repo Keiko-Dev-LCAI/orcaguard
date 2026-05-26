@@ -336,14 +336,16 @@ I'll give you a straight answer in plain English. 🛡️</div>
           <button class="ai-send" id="aiSend" onclick="sendAsk()">Send</button>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:10px">Powered by Lightchain AIVM · Free to use · Requires server running at localhost:8186</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px">Powered by Lightchain AIVM · Free to use</div>
     </div>
 
   </div>
 </div>
 
 <script>
-const BACKEND_URL = 'http://localhost:8186';
+const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8186'
+  : 'https://orcaguard-production.up.railway.app';
 
 // ── Navigation ─────────────────────────────────────────────────────────
 function showPage(id) {
@@ -440,7 +442,7 @@ async function checkContract() {
     }
   } catch (e) {
     showResult('contractResult', 'caution',
-      'Could not reach OrcaGuard server.\n\nStart it with:\npython3 ~/Desktop/orcaguard/orcaguard-server.py\n\nOr: sudo systemctl start orcaguard-server', []);
+      'AI assistant is temporarily unavailable. The server may be starting up — try again in 30 seconds.', []);
   }
   btn.disabled = false; btn.textContent = 'Check It';
 }
@@ -474,7 +476,7 @@ async function checkURL() {
     }
   } catch (e) {
     showResult('urlResult', 'caution',
-      'Could not reach OrcaGuard server.\n\nStart it with:\npython3 ~/Desktop/orcaguard/orcaguard-server.py', []);
+      'AI assistant is temporarily unavailable. The server may be starting up — try again in 30 seconds.', []);
   }
   btn.disabled = false; btn.textContent = 'Check It';
 }
@@ -544,7 +546,7 @@ async function sendAsk() {
       err    => { loading.textContent = '⚠️ Error: ' + err; }
     );
   } catch (e) {
-    loading.innerHTML = '⚠️ Could not reach OrcaGuard server.<br><br><strong>Start it with:</strong><br><code style="color:var(--cyan)">python3 ~/Desktop/orcaguard/orcaguard-server.py</code>';
+    loading.textContent = '⚠️ AI assistant is temporarily unavailable. The server may be starting up — try again in 30 seconds.';
   }
 
   _askActive = false;
