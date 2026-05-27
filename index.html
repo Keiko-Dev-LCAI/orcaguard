@@ -84,6 +84,15 @@
   .scam-list li .desc { color: #cc9999; line-height: 1.6; }
   .scam-list li strong { color: #ff8888; }
 
+  /* ── HOME PAGE CARDS ──────────────────────────────────────────────── */
+  .home-intro { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 28px; max-width: 680px; }
+  .section-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .section-card:hover { border-color: rgba(0,212,255,0.4); background: rgba(0,212,255,0.05); }
+  .section-card-icon { font-size: 28px; margin-bottom: 10px; }
+  .section-card-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .section-card-desc { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
   /* AI Chat */
   .ai-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
   .ai-messages { height: 420px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
@@ -180,6 +189,13 @@
 
     /* Wallet audit grid */
     #auditResults > div { flex-direction: column; }
+
+    /* Home cards */
+    .section-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .section-card { padding: 14px; }
+    .section-card-icon { font-size: 22px; margin-bottom: 6px; }
+    .section-card-title { font-size: 13px; }
+    .section-card-desc { font-size: 12px; }
   }
 </style>
 </head>
@@ -195,8 +211,11 @@
 
 <div class="layout">
   <div class="sidebar">
+    <div class="nav-item active" onclick="showPage('home')" id="nav-home">
+      <span class="nav-icon">🏠</span>Home
+    </div>
     <div class="sidebar-label">Safety Checks</div>
-    <div class="nav-item active" onclick="showPage('contract')" id="nav-contract">
+    <div class="nav-item" onclick="showPage('contract')" id="nav-contract">
       <span class="nav-icon">🔍</span>Check a Contract
     </div>
     <div class="nav-item" onclick="showPage('url')" id="nav-url">
@@ -226,8 +245,69 @@
 
   <div class="main">
 
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="page-title">🛡️ Welcome to OrcaGuard</div>
+      <div class="page-sub">Your crypto safety companion for the Lightchain AI (LCAI) community. Before you buy a token, connect to a site, or send funds anywhere — run it through here first. It takes seconds and could save you everything.</div>
+
+      <p class="home-intro">OrcaGuard puts eight safety tools in one place. From checking unknown contracts and phishing URLs, to auditing your own wallet and learning how scams work — everything is explained in plain English, no technical background needed.</p>
+
+      <div class="section-cards">
+        <div class="section-card" onclick="showPage('contract')">
+          <div class="section-card-icon">🔍</div>
+          <div class="section-card-title">Contract Checker</div>
+          <div class="section-card-desc">Paste any token address to instantly see if it's safe, suspicious, or a known scam.</div>
+        </div>
+        <div class="section-card" onclick="showPage('url')">
+          <div class="section-card-icon">🔗</div>
+          <div class="section-card-title">Website Checker</div>
+          <div class="section-card-desc">Verify a URL before connecting your wallet — one wrong site can drain it in seconds.</div>
+        </div>
+        <div class="section-card" onclick="showPage('wallet')">
+          <div class="section-card-icon">📬</div>
+          <div class="section-card-title">Wallet Verifier</div>
+          <div class="section-card-desc">Confirm a destination address is valid before sending crypto you can never get back.</div>
+        </div>
+        <div class="section-card" onclick="showPage('audit')">
+          <div class="section-card-icon">🔐</div>
+          <div class="section-card-title">Wallet Audit</div>
+          <div class="section-card-desc">Connect your wallet for an instant health check — balances, network, and scam token scan.</div>
+        </div>
+        <div class="section-card" onclick="showPage('buylcai')">
+          <div class="section-card-icon">💰</div>
+          <div class="section-card-title">Buy LCAI Safely</div>
+          <div class="section-card-desc">The only verified places to buy real LCAI — and the fakes to avoid.</div>
+        </div>
+        <div class="section-card" onclick="showPage('scams')">
+          <div class="section-card-icon">🚨</div>
+          <div class="section-card-title">Common Scams</div>
+          <div class="section-card-desc">Know the most common tactics scammers use to steal from crypto holders.</div>
+        </div>
+        <div class="section-card" onclick="showPage('tips')">
+          <div class="section-card-icon">💡</div>
+          <div class="section-card-title">Tips &amp; Help</div>
+          <div class="section-card-desc">Gas fees, slippage, wallet connections, and transaction signing — explained simply.</div>
+        </div>
+        <div class="section-card" onclick="showPage('ask')">
+          <div class="section-card-icon">🤖</div>
+          <div class="section-card-title">Ask OrcaGuard</div>
+          <div class="section-card-desc">Describe any situation and get a plain-English safety verdict powered by Lightchain AIVM.</div>
+        </div>
+      </div>
+
+      <div class="info-card" style="border-color:rgba(0,212,255,0.25);background:rgba(0,212,255,0.04)">
+        <div class="info-card-title">🧭 Not sure where to start?</div>
+        <div style="display:grid;gap:10px;margin-top:12px">
+          <div style="font-size:15px;color:var(--text);line-height:1.6">📋 <strong style="color:#fff">Got a token address?</strong> &rarr; <span style="color:var(--cyan);cursor:pointer" onclick="showPage('contract')">Contract Checker</span></div>
+          <div style="font-size:15px;color:var(--text);line-height:1.6">🌐 <strong style="color:#fff">Not sure about a website?</strong> &rarr; <span style="color:var(--cyan);cursor:pointer" onclick="showPage('url')">Website Checker</span></div>
+          <div style="font-size:15px;color:var(--text);line-height:1.6">🔐 <strong style="color:#fff">Want to see what's in your wallet?</strong> &rarr; <span style="color:var(--cyan);cursor:pointer" onclick="showPage('audit')">Wallet Audit</span></div>
+          <div style="font-size:15px;color:var(--text);line-height:1.6">🌱 <strong style="color:#fff">New to crypto?</strong> &rarr; <span style="color:var(--cyan);cursor:pointer" onclick="showPage('scams')">Common Scams</span></div>
+        </div>
+      </div>
+    </div>
+
     <!-- CONTRACT CHECK -->
-    <div class="page active" id="page-contract">
+    <div class="page" id="page-contract">
       <div class="page-title">🔍 Check a Contract Address</div>
       <div class="page-sub">Paste any token contract address before you buy, approve, or interact with it. OrcaGuard will tell you if it's safe, suspicious, or a known scam — in plain English.</div>
 
@@ -1208,10 +1288,14 @@ function disconnectAudit() {
   document.getElementById('airdropScanBtn').disabled = false;
   document.getElementById('airdropScanBtn').textContent = 'Scan for Scam Tokens';
 }
+
+// ── Default landing page ────────────────────────────────────────────────
+showPage('home');
 </script>
 <nav class="mobile-nav" id="mobileNav">
   <div class="mobile-nav-inner">
-    <button class="mobile-nav-btn active" onclick="showPage('contract')" data-page="contract"><span class="mnav-icon">🔍</span><span>Contract</span></button>
+    <button class="mobile-nav-btn active" onclick="showPage('home')" data-page="home"><span class="mnav-icon">🏠</span><span>Home</span></button>
+    <button class="mobile-nav-btn" onclick="showPage('contract')" data-page="contract"><span class="mnav-icon">🔍</span><span>Contract</span></button>
     <button class="mobile-nav-btn" onclick="showPage('url')" data-page="url"><span class="mnav-icon">🔗</span><span>Website</span></button>
     <button class="mobile-nav-btn" onclick="showPage('wallet')" data-page="wallet"><span class="mnav-icon">📬</span><span>Wallet</span></button>
     <button class="mobile-nav-btn" onclick="showPage('audit')" data-page="audit"><span class="mnav-icon">🔐</span><span>Audit</span></button>
