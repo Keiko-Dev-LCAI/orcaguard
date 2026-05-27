@@ -227,6 +227,9 @@
     <div class="nav-item" onclick="showPage('audit')" id="nav-audit">
       <span class="nav-icon">🔐</span>Wallet Audit
     </div>
+    <div class="nav-item" onclick="showPage('breach')" id="nav-breach">
+      <span class="nav-icon">🔓</span>Breach Check
+    </div>
     <div class="sidebar-label">Resources</div>
     <div class="nav-item" onclick="showPage('buylcai')" id="nav-buylcai">
       <span class="nav-icon">💰</span>Buy LCAI Safely
@@ -272,6 +275,11 @@
           <div class="section-card-icon">🔐</div>
           <div class="section-card-title">Wallet Audit</div>
           <div class="section-card-desc">Connect your wallet for an instant health check — balances, network, and scam token scan.</div>
+        </div>
+        <div class="section-card" onclick="showPage('breach')">
+          <div class="section-card-icon">🔓</div>
+          <div class="section-card-title">Breach Check</div>
+          <div class="section-card-desc">Find out if your email has appeared in a known data breach using Have I Been Pwned.</div>
         </div>
         <div class="section-card" onclick="showPage('buylcai')">
           <div class="section-card-icon">💰</div>
@@ -709,6 +717,45 @@
           <div style="background:rgba(255,170,0,0.07);border-radius:10px;padding:14px 16px;border:1px solid rgba(255,170,0,0.2)">
             <div style="font-weight:700;color:var(--yellow);margin-bottom:6px;font-size:15px">⚠️ What "Approve" and "Permit" really mean</div>
             <p style="font-size:14px;color:#bb9955;line-height:1.7;margin:0">These give a smart contract permission to spend your tokens. Legitimate DeFi apps (like Uniswap) need a one-time approval before a swap — that's normal. But always set the approval amount to just what you need for that transaction, not unlimited. After the trade, that approval stays active forever unless you revoke it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA BREACH CHECK -->
+    <div class="page" id="page-breach">
+      <div class="page-title">🔓 Data Breach Check</div>
+      <div class="page-sub">Find out if your email address has appeared in a known data breach — password leaks, hacked databases, and more. Powered by Have I Been Pwned, the most trusted breach database in the world.</div>
+
+      <div class="check-box">
+        <div class="check-label">Email Address</div>
+        <div class="input-row">
+          <input class="check-input" id="breachInput" placeholder="your@email.com" type="email" />
+          <button class="check-btn" onclick="checkBreach()">Check for Breaches</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">Opens Have I Been Pwned in a new tab with your search pre-filled</div>
+      </div>
+
+      <div class="info-card" style="border-color:rgba(0,212,255,0.25);background:rgba(0,212,255,0.04)">
+        <div class="info-card-title">🌐 About Have I Been Pwned</div>
+        <p>Have I Been Pwned is a free service run by respected security researcher Troy Hunt. It aggregates billions of records from hundreds of real-world data breaches — including leaked passwords, email addresses, and personal data from hacked databases around the world.</p>
+        <p style="margin-top:8px">If your email shows up in a breach, <strong style="color:#fff">change that password immediately</strong> — and anywhere else you've reused it. Password reuse is one of the most dangerous habits in online security.</p>
+      </div>
+
+      <div class="info-card" style="border-color:rgba(255,170,0,0.25);background:rgba(255,170,0,0.04)">
+        <div class="info-card-title">⚠️ What to do if you're in a breach</div>
+        <div style="display:grid;gap:10px;margin-top:12px">
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:4px;font-size:15px">1. Change your password on that site immediately</div>
+            <p style="margin:0;font-size:14px">Log in to the breached service and update your password to something strong and unique — a mix of letters, numbers, and symbols, at least 12 characters long.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:4px;font-size:15px">2. If you reused that password anywhere else, change it there too</div>
+            <p style="margin:0;font-size:14px">Attackers take leaked passwords and try them on other services (called credential stuffing). If you used the same password on your email, exchange, or wallet — change those now.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:700;color:#fff;margin-bottom:4px;font-size:15px">3. Turn on two-factor authentication wherever possible</div>
+            <p style="margin:0;font-size:14px">2FA means even if someone has your password, they can't get in without also having your phone. Enable it on your email, crypto exchanges, and any financial account.</p>
           </div>
         </div>
       </div>
@@ -1289,6 +1336,16 @@ function disconnectAudit() {
   document.getElementById('airdropScanBtn').textContent = 'Scan for Scam Tokens';
 }
 
+// ── Breach Check ───────────────────────────────────────────────────────
+function checkBreach() {
+  var email = document.getElementById('breachInput').value.trim();
+  if (!email) {
+    alert('Please enter an email address');
+    return;
+  }
+  window.open('https://haveibeenpwned.com/account/' + encodeURIComponent(email), '_blank');
+}
+
 // ── Default landing page ────────────────────────────────────────────────
 showPage('home');
 </script>
@@ -1299,6 +1356,7 @@ showPage('home');
     <button class="mobile-nav-btn" onclick="showPage('url')" data-page="url"><span class="mnav-icon">🔗</span><span>Website</span></button>
     <button class="mobile-nav-btn" onclick="showPage('wallet')" data-page="wallet"><span class="mnav-icon">📬</span><span>Wallet</span></button>
     <button class="mobile-nav-btn" onclick="showPage('audit')" data-page="audit"><span class="mnav-icon">🔐</span><span>Audit</span></button>
+    <button class="mobile-nav-btn" onclick="showPage('breach')" data-page="breach"><span class="mnav-icon">🔓</span><span>Breach</span></button>
     <button class="mobile-nav-btn" onclick="showPage('buylcai')" data-page="buylcai"><span class="mnav-icon">💰</span><span>Buy LCAI</span></button>
     <button class="mobile-nav-btn" onclick="showPage('scams')" data-page="scams"><span class="mnav-icon">🚨</span><span>Scams</span></button>
     <button class="mobile-nav-btn" onclick="showPage('tips')" data-page="tips"><span class="mnav-icon">💡</span><span>Tips</span></button>
