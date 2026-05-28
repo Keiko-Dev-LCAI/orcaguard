@@ -1363,5 +1363,46 @@ showPage('home');
     <button class="mobile-nav-btn" onclick="showPage('ask')" data-page="ask"><span class="mnav-icon">🤖</span><span>Ask AI</span></button>
   </div>
 </nav>
+
+<div id="orca-terms-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)document.getElementById('orca-terms-overlay').style.display='none'">
+  <div style="background:#0d1b2a;border-radius:16px;max-width:600px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(0,212,255,0.2);">
+    <div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <span style="font-size:17px;font-weight:700;color:#e0eaf5;">📋 Terms &amp; Disclaimer</span>
+      <button onclick="document.getElementById('orca-terms-overlay').style.display='none'" style="background:#1a2e3f;border:none;color:#8fa8c0;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;line-height:1;">✕</button>
+    </div>
+    <div style="overflow-y:auto;padding:20px 22px;font-size:13px;color:#8fa8c0;line-height:1.75;display:flex;flex-direction:column;gap:14px;">
+      <p style="font-size:11px;color:#4a6080;">Last updated: May 2025 &nbsp;·&nbsp; OrcaGuard — Built on Lightchain</p>
+
+      <div><div style="font-size:13px;font-weight:700;color:#e0eaf5;margin-bottom:5px;">1. What OrcaGuard Is</div>
+      <p>OrcaGuard is a free security awareness and research tool for the Lightchain blockchain community. It is operated by an individual developer and provided as-is. It is not a professional cybersecurity firm, law enforcement agency, or licensed security service.</p></div>
+      <div style="height:1px;background:rgba(255,255,255,0.07);"></div>
+
+      <div><div style="font-size:13px;font-weight:700;color:#e0eaf5;margin-bottom:5px;">2. For Informational Purposes Only</div>
+      <p>All analysis results, risk ratings, scam warnings, contract reviews, and security information provided by OrcaGuard are for general informational and educational purposes only. Results do not constitute professional security, legal, or financial advice. Do not make security or investment decisions based solely on this tool.</p></div>
+      <div style="height:1px;background:rgba(255,255,255,0.07);"></div>
+
+      <div><div style="font-size:13px;font-weight:700;color:#e0eaf5;margin-bottom:5px;">3. AI Responses &amp; Analysis Accuracy</div>
+      <p>AI-generated analysis may be inaccurate, incomplete, or outdated. Smart contract analysis may miss vulnerabilities. Website and wallet checks rely on third-party data sources that may be incomplete. The operator makes no representations about the accuracy or completeness of any analysis result.</p></div>
+      <div style="height:1px;background:rgba(255,255,255,0.07);"></div>
+
+      <div><div style="font-size:13px;font-weight:700;color:#e0eaf5;margin-bottom:5px;">4. No Warranty — Service Provided AS-IS</div>
+      <p>THIS SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND. THE OPERATOR DOES NOT WARRANT THAT ANALYSIS RESULTS ARE ACCURATE, COMPLETE, OR FREE FROM ERROR. THIS TOOL DOES NOT GUARANTEE THE SAFETY OF ANY CONTRACT, WALLET, OR WEBSITE.</p></div>
+      <div style="height:1px;background:rgba(255,255,255,0.07);"></div>
+
+      <div><div style="font-size:13px;font-weight:700;color:#e0eaf5;margin-bottom:5px;">5. Limitation of Liability</div>
+      <p>TO THE FULLEST EXTENT PERMITTED BY LAW, THE OPERATOR SHALL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THIS SERVICE OR RELIANCE ON ITS ANALYSIS, INCLUDING BUT NOT LIMITED TO FINANCIAL LOSSES, HACKING, UNAUTHORIZED ACCESS, OR DECISIONS MADE BASED ON TOOL OUTPUT. YOUR USE OF ORCAGUARD IS ENTIRELY AT YOUR OWN RISK.</p></div>
+      <div style="height:1px;background:rgba(255,255,255,0.07);"></div>
+
+      <div><div style="font-size:13px;font-weight:700;color:#e0eaf5;margin-bottom:5px;">6. Service May Change or Stop</div>
+      <p>OrcaGuard may be modified, suspended, or permanently discontinued at any time without notice. AI features depend on the availability of the Lightchain AIVM network, which is outside the operator's control.</p></div>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0;">
+      <button onclick="document.getElementById('orca-terms-overlay').style.display='none'" style="width:100%;padding:13px;background:#00d4ff;color:#0a0f1a;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+<div style="text-align:center;padding:8px;padding-bottom:72px;font-size:11px;">
+  <a href="#" onclick="document.getElementById('orca-terms-overlay').style.display='flex';return false;" style="color:#4a6080;text-decoration:none;">📋 Terms &amp; Disclaimer</a>
+</div>
 </body>
 </html>
