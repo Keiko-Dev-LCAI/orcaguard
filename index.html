@@ -196,6 +196,12 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#00b4a2">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <script type="module">
+    try {
+      const { EthereumProvider } = await import('https://esm.sh/@walletconnect/ethereum-provider@2.17.3');
+      window.WCEthereumProvider = EthereumProvider;
+    } catch(e) { console.warn('WalletConnect unavailable:', e); }
+  </script>
 </head>
 <body>
 
@@ -1074,15 +1080,45 @@ const NETWORKS = {
 };
 const LCAI_CONTRACT = '0x9cA8530CA349c966Fe9ef903Df17a75B8A778927';
 
+let _wcProv = null;
+
+async function connectViaWalletConnect() {
+  if (!window.WCEthereumProvider) { return false; }
+  const btn = document.getElementById('auditConnectBtn');
+  const errEl = document.getElementById('auditConnectError');
+  errEl.style.display = 'none';
+  try {
+    _wcProv = await window.WCEthereumProvider.init({
+      projectId: '3c6a0da53258912a28923198ddac3333',
+      chains: [1], optionalChains: [9200], showQrModal: true,
+      metadata: { name: 'OrcaGuard', description: 'Wallet & Contract Security Checker', url: 'http://localhost:8186', icons: [] },
+      rpcMap: { 9200: 'https://rpc.mainnet.lightchain.ai' }
+    });
+    await _wcProv.enable();
+    window.ethereum = _wcProv;
+    return true;
+  } catch(e) {
+    if (!e || e.message?.includes('User rejected') || e.message?.includes('rejected') || e.code === 4001) return false;
+    errEl.textContent = 'WalletConnect failed. Try a different wallet.';
+    errEl.style.display = 'block';
+    return false;
+  }
+}
+
 async function connectWalletAudit() {
   const btn = document.getElementById('auditConnectBtn');
   const errEl = document.getElementById('auditConnectError');
   errEl.style.display = 'none';
 
   if (!window.ethereum) {
-    errEl.textContent = 'No wallet detected. Open this page inside your Trust Wallet or MetaMask browser.';
-    errEl.style.display = 'block';
-    return;
+    if (window.WCEthereumProvider) {
+      const ok = await connectViaWalletConnect();
+      if (!ok) return;
+    } else {
+      errEl.textContent = 'No wallet detected. Install a browser wallet extension or use WalletConnect.';
+      errEl.style.display = 'block';
+      return;
+    }
   }
 
   btn.disabled = true;
