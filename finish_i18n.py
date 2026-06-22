@@ -3,6 +3,7 @@
 import json
 import os
 import re
+from datetime import datetime, timezone
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 TRANS = os.path.join(DIR, 'translations')
@@ -16,6 +17,23 @@ def load_json(name):
 
 def js_str(s):
     return json.dumps(s, ensure_ascii=False)
+
+
+def bump_index_cache_buster():
+    """Force clients (especially Android TWA) to fetch fresh i18n-ui.js — Binai pattern."""
+    index_path = os.path.join(DIR, 'index.html')
+    version = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M')
+    with open(index_path, encoding='utf-8') as f:
+        html = f.read()
+    new_tag = f'<script src="i18n-ui.js?v={version}"></script>'
+    if re.search(r'<script src="i18n-ui\.js\?v=[^"]+"></script>', html):
+        html = re.sub(r'<script src="i18n-ui\.js\?v=[^"]+"></script>', new_tag, html)
+    else:
+        html = html.replace('<script src="i18n-ui.js"></script>', new_tag)
+    with open(index_path, 'w', encoding='utf-8') as f:
+        f.write(html)
+    print(f'  cache buster → i18n-ui.js?v={version}')
+    return version
 
 
 def load_pack(lang):
@@ -177,6 +195,7 @@ window.currentLang = function() {
     out_path = os.path.join(DIR, 'i18n-ui.js')
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n')
+    bump_index_cache_buster()
 
     en = packs['en']
     for lang in LANGS:
