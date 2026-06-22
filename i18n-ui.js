@@ -1684,6 +1684,8 @@ window.applyI18n = function() {
 
   set('langTitle', 'lang_title');
   set('langSub', 'lang_sub');
+  set('mobileLangTitle', 'lang_title');
+  set('mobileLangSub', 'lang_sub');
   set('sidebarLabelChecks', 'sidebar_safety_checks');
   set('sidebarLabelResources', 'sidebar_resources');
   set('sidebarLabelAi', 'sidebar_ai_assistant');
