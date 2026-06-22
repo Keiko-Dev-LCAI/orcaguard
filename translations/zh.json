@@ -212,5 +212,6 @@
   "audit_check_eth_ok": "ETH 余额足以支付 Gas 费。",
   "audit_check_lcai": "在以太坊上检测到 LCAI。记住您可以跨链到 Lightchain 主网在 dApp 中使用。",
   "audit_check_revoke": "使用 Revoke.cash 检查活跃代币授权 — 无限授权是安全风险。点击下方按钮。",
-  "native_suffix": "（原生）"
+  "native_suffix": "（原生）",
+  "lang_sub": "切换整个应用 — 导航、指南和按钮。"
 }
