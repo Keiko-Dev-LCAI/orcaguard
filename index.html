@@ -36,6 +36,11 @@
   .nav-item.active { background: rgba(0,212,255,0.08); color: var(--cyan); border-left-color: var(--cyan); }
   .nav-icon { font-size: 26px; width: 32px; text-align: center; flex-shrink: 0; }
 
+  .android-install { padding: 14px 22px 18px; border-top: 1px solid var(--border); margin-top: auto; }
+  .android-install-btn { display: block; text-align: center; background: var(--cyan); color: #000; font-weight: 800; font-size: 17px; padding: 12px 14px; border-radius: 10px; text-decoration: none; }
+  .android-install-btn:hover { opacity: 0.9; }
+  .android-install-hint { margin-top: 8px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+
   .main { flex: 1; padding: 28px 40px; overflow-y: auto; height: 100vh; }
 
   .page { display: none; }
@@ -245,6 +250,10 @@
     <div class="sidebar-label">AI Assistant</div>
     <div class="nav-item" onclick="showPage('ask')" id="nav-ask">
       <span class="nav-icon">🤖</span>Ask OrcaGuard
+    </div>
+    <div class="android-install">
+      <a class="android-install-btn" href="OrcaGuard.apk" download>📲 Download Android App</a>
+      <div class="android-install-hint">Download → open file → tap Install. Allow unknown apps if your phone asks.</div>
     </div>
   </div>
 
