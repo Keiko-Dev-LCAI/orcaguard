@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Build complete i18n-ui.js — Binai pattern, matches current index.html IDs."""
-import ast
-import copy
+"""Build i18n-ui.js from translations/{lang}.json + translations/{lang}_html.json."""
 import json
 import os
 import re
 
 DIR = os.path.dirname(os.path.abspath(__file__))
+TRANS = os.path.join(DIR, 'translations')
+LANGS = ['en', 'es', 'fr', 'pt', 'de', 'ja', 'zh']
 
 
 def load_json(name):
-    with open(os.path.join(DIR, 'translations', name), encoding='utf-8') as f:
+    with open(os.path.join(TRANS, name), encoding='utf-8') as f:
         return json.load(f)
 
 
@@ -18,145 +18,15 @@ def js_str(s):
     return json.dumps(s, ensure_ascii=False)
 
 
-def merge_pack(base, overlay, html_overlay=None):
-    p = copy.deepcopy(base)
-    p.update(overlay)
-    if html_overlay:
-        p.update(html_overlay)
-    return p
+def load_pack(lang):
+    strings = load_json(f'{lang}.json')
+    html = load_json(f'{lang}_html.json')
+    pack = {**strings, **html}
+    raw = pack.get('scams_list_html', '')
+    if raw.startswith('<ul'):
+        pack['scams_list_html'] = re.sub(r'^<ul[^>]*>|</ul>$', '', raw)
+    return pack
 
-
-def tr_html(html, pairs):
-    s = html
-    for old, new in pairs:
-        s = s.replace(old, new)
-    return s
-
-
-# ── English base ─────────────────────────────────────────────────────────────
-en = load_json('en.json')
-en.update(load_json('en_html.json'))
-en.setdefault('lang_sub', 'Change the whole app — navigation, guides, and buttons.')
-
-# Fix scams_list_html — index uses <ul id="scamsList">, inner <li> only
-if en.get('scams_list_html', '').startswith('<ul'):
-    en['scams_list_html'] = re.sub(r'^<ul[^>]*>|</ul>$', '', en['scams_list_html'])
-
-# ── Spanish overlay (from finalize_i18n.py) ──────────────────────────────────
-fin = open(os.path.join(DIR, 'finalize_i18n.py'), encoding='utf-8').read()
-es_overlay = ast.literal_eval(re.search(r'^es = (\{.*?\n\})\n', fin, re.M | re.S).group(1))
-es_overlay.setdefault('lang_sub', 'Cambia toda la app — navegación, guías y botones.')
-es_html = {k: tr_html(v, [
-    ("Got a token address?", "¿Tienes una dirección de token?"),
-    ("Contract Checker", "Comprobador de contratos"),
-    ("Not sure about a website?", "¿No estás seguro de un sitio web?"),
-    ("Website Checker", "Comprobador de sitios web"),
-    ("Want to see what's in your wallet?", "¿Quieres ver qué hay en tu billetera?"),
-    ("Wallet Audit", "Auditoría de billetera"),
-    ("New to crypto?", "¿Nuevo en cripto?"),
-    ("Common Scams", "Estafas comunes"),
-    ("Airdrop Scams", "Estafas de airdrop"),
-    ("Honeypot Tokens", "Tokens honeypot"),
-    ("Official site", "Sitio oficial"),
-    ("Use the built-in browser", "Usa el navegador integrado"),
-    ("Understanding Gas Fees", "Entender las comisiones de gas"),
-    ("Signs you're probably safe", "Señales de que probablemente estás seguro"),
-]) for k, v in load_json('en_html.json').items()}
-if es_html.get('scams_list_html', '').startswith('<ul'):
-    es_html['scams_list_html'] = re.sub(r'^<ul[^>]*>|</ul>$', '', es_html['scams_list_html'])
-
-# ── French overlay (inline subset from generate_overlays.py) ─────────────────
-fr_overlay = {
-    "lang_title": "Langue", "lang_sub": "Changez toute l'app — navigation, guides et boutons.",
-    "server_checking": "● Vérification...", "server_online": "● Serveur en ligne", "server_offline": "● Serveur hors ligne",
-    "sidebar_safety_checks": "Vérifications", "sidebar_resources": "Ressources", "sidebar_ai_assistant": "Assistant IA",
-    "nav_contract": "Vérifier un contrat", "nav_url": "Vérifier un site", "nav_wallet": "Vérifier un portefeuille",
-    "nav_audit": "Audit portefeuille", "nav_breach": "Fuites de données", "nav_buylcai": "Acheter LCAI",
-    "nav_scams": "Arnaques courantes", "nav_tips": "Conseils", "nav_ask": "Demander à OrcaGuard",
-    "mnav_home": "Accueil", "mnav_contract": "Contrat", "mnav_url": "Site", "mnav_wallet": "Portefeuille",
-    "mnav_audit": "Audit", "mnav_breach": "Fuites", "mnav_buylcai": "LCAI", "mnav_scams": "Arnaques",
-    "mnav_tips": "Conseils", "mnav_ask": "IA",
-    "home_title": "🛡️ Bienvenue sur OrcaGuard",
-    "home_sub": "Votre compagnon de sécurité crypto pour la communauté Lightchain AI (LCAI). Avant d'acheter, de vous connecter ou d'envoyer des fonds — passez par ici d'abord.",
-    "contract_btn": "Vérifier", "url_btn": "Vérifier", "wallet_btn": "Vérifier", "wallet_bot_btn": "Vérifier bot",
-    "audit_connect_btn": "Connecter le portefeuille", "audit_disconnect": "Déconnecter",
-    "audit_airdrop_btn": "Scanner les tokens arnaque", "breach_btn": "Vérifier les fuites",
-    "ask_send": "Envoyer", "terms_close": "Fermer", "ask_welcome": "Salut ! Je suis OrcaGuard. Je protège les détenteurs de crypto des arnaques, du phishing et des mauvais contrats.\n\nPosez-moi vos questions en langage simple. 🛡️",
-    "footer_orca_link": "🐬 Autres dApps Orca →", "terms_footer_link": "📋 Conditions et avis",
-    "verdict_safe": "🟢 SÛR", "verdict_danger": "🔴 DANGER", "verdict_caution": "🟡 PRUDENCE",
-    "btn_checking": "Vérification...", "btn_connecting": "Connexion...", "btn_switching": "Changement...",
-    "btn_scanning": "Analyse…", "btn_scan_again": "Analyser à nouveau",
-    "msg_server_unavailable": "Assistant IA temporairement indisponible. Réessayez dans 30 secondes.",
-    "msg_connect_wallet_first": "Connectez d'abord votre portefeuille.",
-    "msg_audit_no_wallet": "Aucun portefeuille détecté. Installez une extension ou utilisez WalletConnect.",
-    "msg_audit_wc_failed": "WalletConnect a échoué. Essayez un autre portefeuille.",
-    "msg_audit_cancelled": "Connexion annulée.",
-    "net_eth": "Ethereum Mainnet", "net_lcai": "Lightchain Mainnet",
-    "audit_switch_eth": "↔ Passer à Ethereum", "audit_switch_lcai": "↔ Passer à Lightchain",
-}
-
-# ── Chinese overlay (from translations/zh.json + zh_html.json) ───────────────
-zh_overlay = load_json('zh.json')
-zh_overlay.setdefault('lang_sub', '切换整个应用 — 导航、指南和按钮。')
-zh_html = load_json('zh_html.json')
-if zh_html.get('scams_list_html', '').startswith('<ul'):
-    zh_html['scams_list_html'] = re.sub(r'^<ul[^>]*>|</ul>$', '', zh_html['scams_list_html'])
-
-# ── Japanese overlay ─────────────────────────────────────────────────────────
-ja_overlay = {
-    "lang_title": "言語", "lang_sub": "アプリ全体を切り替え — ナビ、ガイド、ボタンすべて。",
-    "sidebar_safety_checks": "安全チェック", "sidebar_resources": "リソース", "sidebar_ai_assistant": "AIアシスタント",
-    "nav_contract": "コントラクト確認", "nav_url": "ウェブサイト確認", "nav_wallet": "ウォレット確認",
-    "nav_audit": "ウォレット監査", "nav_breach": "漏洩チェック", "nav_buylcai": "LCAI安全購入",
-    "nav_scams": "よくある詐欺", "nav_tips": "ヒントとヘルプ", "nav_ask": "OrcaGuardに質問",
-    "mnav_home": "ホーム", "mnav_contract": "契約", "mnav_url": "サイト", "mnav_wallet": "ウォレット",
-    "mnav_audit": "監査", "mnav_breach": "漏洩", "mnav_buylcai": "LCAI", "mnav_scams": "詐欺",
-    "mnav_tips": "ヒント", "mnav_ask": "AI",
-    "home_title": "🛡️ OrcaGuardへようこそ",
-    "home_sub": "Lightchain AI（LCAI）コミュニティの暗号資産安全コンパニオン。トークン購入、サイト接続、送金の前に — まずここで確認してください。",
-    "contract_btn": "確認", "url_btn": "確認", "wallet_btn": "確認", "audit_connect_btn": "ウォレット接続",
-    "audit_disconnect": "切断", "ask_send": "送信", "terms_close": "閉じる",
-    "ask_welcome": "こんにちは！OrcaGuardです。詐欺、フィッシング、危険なコントラクトから暗号資産ホルダーを守ります。\n\n何でも平易な日本語でお答えします。🛡️",
-    "footer_orca_link": "🐬 他のOrca dApps →", "terms_footer_link": "📋 利用規約",
-    "verdict_safe": "🟢 安全", "verdict_danger": "🔴 危険", "verdict_caution": "🟡 注意",
-    "btn_checking": "確認中...", "btn_connecting": "接続中...", "btn_switching": "切替中...",
-    "msg_server_unavailable": "AIアシスタントは一時的に利用できません。30秒後に再試行してください。",
-    "msg_connect_wallet_first": "まずウォレットを接続してください。",
-    "net_eth": "Ethereumメインネット", "net_lcai": "Lightchainメインネット",
-    "audit_switch_eth": "↔ Ethereumに切替", "audit_switch_lcai": "↔ Lightchainに切替",
-}
-
-# Portuguese / German — nav + buttons
-pt_overlay = {
-    "lang_title": "Idioma", "lang_sub": "Mude o app inteiro — navegação, guias e botões.",
-    "nav_contract": "Verificar contrato", "nav_url": "Verificar site", "nav_wallet": "Verificar carteira",
-    "nav_audit": "Auditoria da carteira", "nav_breach": "Vazamentos", "nav_buylcai": "Comprar LCAI",
-    "nav_scams": "Golpes comuns", "nav_tips": "Dicas e ajuda", "nav_ask": "Perguntar ao OrcaGuard",
-    "home_title": "🛡️ Bem-vindo ao OrcaGuard",
-    "contract_btn": "Verificar", "ask_send": "Enviar", "audit_connect_btn": "Conectar carteira",
-    "ask_welcome": "Olá! Sou o OrcaGuard. Protejo holders de cripto de golpes, phishing e contratos ruins.\n\nPergunte o que quiser em linguagem simples. 🛡️",
-    "footer_orca_link": "🐬 Outros dApps Orca →", "terms_footer_link": "📋 Termos e aviso",
-}
-de_overlay = {
-    "lang_title": "Sprache", "lang_sub": "Ganze App umstellen — Navigation, Anleitungen und Buttons.",
-    "nav_contract": "Vertrag prüfen", "nav_url": "Website prüfen", "nav_wallet": "Wallet prüfen",
-    "nav_audit": "Wallet-Audit", "nav_breach": "Datenlecks", "nav_buylcai": "LCAI sicher kaufen",
-    "nav_scams": "Betrugsmaschen", "nav_tips": "Tipps & Hilfe", "nav_ask": "OrcaGuard fragen",
-    "home_title": "🛡️ Willkommen bei OrcaGuard",
-    "contract_btn": "Prüfen", "ask_send": "Senden", "audit_connect_btn": "Wallet verbinden",
-    "ask_welcome": "Hallo! Ich bin OrcaGuard. Ich schütze Krypto-Inhaber vor Betrug, Phishing und schlechten Verträgen.\n\nFragen Sie mich in einfacher Sprache. 🛡️",
-    "footer_orca_link": "🐬 Weitere Orca dApps →", "terms_footer_link": "📋 Nutzungsbedingungen",
-}
-
-packs = {
-    'en': en,
-    'es': merge_pack(en, es_overlay, es_html),
-    'fr': merge_pack(en, fr_overlay),
-    'pt': merge_pack(en, pt_overlay),
-    'de': merge_pack(en, de_overlay),
-    'ja': merge_pack(en, ja_overlay),
-    'zh': merge_pack(en, zh_overlay, zh_html),
-}
 
 APPLY_I18N = r'''
 window.applyI18n = function() {
@@ -267,17 +137,30 @@ window.applyI18n = function() {
 };
 '''
 
-lines = ['/* OrcaGuard UI strings — full app localization (Binai pattern) */', 'window.ORCAGUARD_I18N = {']
-for li, lang in enumerate(packs):
-    lines.append(f'  {lang}: {{')
-    items = sorted(packs[lang].items())
-    for i, (k, v) in enumerate(items):
-        comma = ',' if i < len(items) - 1 else ''
-        lines.append(f'    {k}: {js_str(v)}{comma}')
-    lines.append('  }' + (',' if li < len(packs) - 1 else ''))
-lines.append('};')
-lines.append('')
-lines.append('''window.t = function(key, vars) {
+
+def main():
+    packs = {}
+    for lang in LANGS:
+        path = os.path.join(TRANS, f'{lang}.json')
+        if not os.path.exists(path):
+            print(f'ERROR: missing {path} — run build_translations.py first')
+            raise SystemExit(1)
+        packs[lang] = load_pack(lang)
+
+    lines = [
+        '/* OrcaGuard UI strings — full app localization (Binai pattern) */',
+        'window.ORCAGUARD_I18N = {',
+    ]
+    for li, lang in enumerate(LANGS):
+        lines.append(f'  {lang}: {{')
+        items = sorted(packs[lang].items())
+        for i, (k, v) in enumerate(items):
+            comma = ',' if i < len(items) - 1 else ''
+            lines.append(f'    {k}: {js_str(v)}{comma}')
+        lines.append('  }' + (',' if li < len(LANGS) - 1 else ''))
+    lines.append('};')
+    lines.append('')
+    lines.append('''window.t = function(key, vars) {
   const lang = localStorage.getItem('orcaguard_lang') || 'en';
   const pack = window.ORCAGUARD_I18N[lang] || window.ORCAGUARD_I18N.en;
   let s = pack[key] || window.ORCAGUARD_I18N.en[key] || key;
@@ -289,12 +172,21 @@ window.currentLang = function() {
   return localStorage.getItem('orcaguard_lang') || 'en';
 };
 ''')
-lines.append(APPLY_I18N.strip())
+    lines.append(APPLY_I18N.strip())
 
-out_path = os.path.join(DIR, 'i18n-ui.js')
-with open(out_path, 'w', encoding='utf-8') as f:
-    f.write('\n'.join(lines) + '\n')
+    out_path = os.path.join(DIR, 'i18n-ui.js')
+    with open(out_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines) + '\n')
 
-for lang in packs:
-    print(f'{lang}: {len(packs[lang])} keys')
-print(f'Wrote {out_path}')
+    en = packs['en']
+    for lang in LANGS:
+        p = packs[lang]
+        missing = [k for k in en if k not in p]
+        same = [k for k in en if k in p and p[k] == en[k]
+                and k not in ('contract_ph', 'url_ph', 'wallet_ph', 'wallet_bot_ph', 'msg_airdrop_limit')]
+        print(f'{lang}: {len(p)} keys, missing={len(missing)}, same_as_en={len(same)}')
+    print(f'Wrote {out_path}')
+
+
+if __name__ == '__main__':
+    main()
