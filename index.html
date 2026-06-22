@@ -28,7 +28,8 @@
   .header-badge { background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); font-size: 17px; font-weight: 600; padding: 5px 12px; border-radius: 20px; display: inline-block; }
 
   .layout { display: flex; height: 100vh; overflow: hidden; }
-  .sidebar { width: 360px; flex-shrink: 0; background: rgba(0,0,0,0.2); border-right: 1px solid var(--border); padding: 0; position: sticky; top: 0; height: 100vh; overflow-y: hidden; }
+  .sidebar { width: 360px; flex-shrink: 0; background: rgba(0,0,0,0.2); border-right: 1px solid var(--border); padding: 0; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar-nav { flex: 1; min-height: 0; overflow-y: auto; }
   .sidebar-label { font-size: 18px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 24px 6px; margin-top: 10px; }
   .sidebar-label:first-of-type { margin-top: 12px; }
   .nav-item { display: flex; align-items: center; gap: 14px; padding: 13px 24px; cursor: pointer; font-size: 24px; color: var(--muted); border-left: 3px solid transparent; transition: all 0.15s; line-height: 1.2; }
@@ -37,7 +38,8 @@
   .nav-icon { font-size: 26px; width: 32px; text-align: center; flex-shrink: 0; }
 
 
-  .lang-section { padding: 14px 22px 18px; border-top: 1px solid var(--border); }
+  .lang-section { padding: 14px 22px 18px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .mobile-lang-bar { display: none; padding: 12px 0 16px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
   .lang-section-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
   .lang-section-sub { font-size: 14px; color: var(--muted); margin-bottom: 10px; line-height: 1.45; }
   .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -45,7 +47,7 @@
     background: rgba(0,0,0,0.25); color: var(--text); font-size: 14px; cursor: pointer; font-family: inherit; }
   .lang-btn.active { border-color: var(--cyan); background: rgba(0,212,255,0.12); }
 
-  .android-install { padding: 14px 22px 18px; border-top: 1px solid var(--border); margin-top: auto; }
+  .android-install { padding: 14px 22px 18px; border-top: 1px solid var(--border); flex-shrink: 0; }
   .android-install-btn { display: block; text-align: center; background: var(--cyan); color: #000; font-weight: 800; font-size: 17px; padding: 12px 14px; border-radius: 10px; text-decoration: none; }
   .android-install-btn:hover { opacity: 0.9; }
   .android-install-hint { margin-top: 8px; font-size: 14px; color: var(--muted); line-height: 1.5; }
@@ -155,6 +157,7 @@
 
     /* Layout */
     .sidebar { display: none; }
+    .mobile-lang-bar { display: block; }
     .mobile-nav { display: block; }
     .layout { height: auto; min-height: 100vh; overflow: visible; }
     .main { padding: 16px 14px 100px; max-width: 100%; overflow-x: hidden; overflow-y: visible; height: auto; }
@@ -230,6 +233,7 @@
       <div class="header-badge" id="serverBadge">● Checking...</div>
     </div>
     <div id="nav-home" style="display:none"></div>
+    <div class="sidebar-nav">
     <div class="sidebar-label" id="sidebarLabelChecks">Safety Checks</div>
     <div class="nav-item" onclick="showPage('contract')" id="nav-contract">
       <span class="nav-icon">🔍</span><span id="navContract">Check a Contract</span>
@@ -260,6 +264,7 @@
     <div class="nav-item" onclick="showPage('ask')" id="nav-ask">
       <span class="nav-icon">🤖</span><span id="navAsk">Ask OrcaGuard</span>
     </div>
+    </div>
     <div class="lang-section">
       <div class="lang-section-title" id="langTitle">Language</div>
       <div class="lang-section-sub" id="langSub">Change the whole app — navigation, guides, and buttons.</div>
@@ -272,6 +277,11 @@
   </div>
 
   <div class="main">
+    <div class="mobile-lang-bar">
+      <div class="lang-section-title" id="mobileLangTitle">Language</div>
+      <div class="lang-section-sub" id="mobileLangSub">Change the whole app — navigation, guides, and buttons.</div>
+      <div class="lang-grid" id="mobileLangGrid"></div>
+    </div>
 
     <!-- HOME -->
     <div class="page active" id="page-home">
@@ -1425,6 +1435,9 @@ const LANGS = [
   {id:'pt',label:'🇧🇷 Portuguese'},{id:'de',label:'🇩🇪 German'},{id:'ja',label:'🇯🇵 Japanese'},
   {id:'zh',label:'🇨🇳 Chinese'}
 ];
+function syncLangButtons(langId) {
+  document.querySelectorAll('.lang-btn').forEach(x => x.classList.toggle('active', x.dataset.id === langId));
+}
 function buildLanguageGrid(gridId, onSelect) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
@@ -1438,14 +1451,16 @@ function buildLanguageGrid(gridId, onSelect) {
     b.textContent = l.label;
     b.onclick = () => {
       localStorage.setItem('orcaguard_lang', l.id);
-      grid.querySelectorAll('.lang-btn').forEach(x => x.classList.toggle('active', x.dataset.id === l.id));
+      syncLangButtons(l.id);
       if (onSelect) onSelect(l.id);
     };
     grid.appendChild(b);
   });
 }
 function initLanguagePickers() {
-  buildLanguageGrid('langGrid', () => applyI18n());
+  const onPick = () => applyI18n();
+  buildLanguageGrid('langGrid', onPick);
+  buildLanguageGrid('mobileLangGrid', onPick);
 }
 initLanguagePickers();
 applyI18n();
