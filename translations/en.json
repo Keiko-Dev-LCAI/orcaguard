@@ -128,7 +128,7 @@
   "breach_sub": "Find out if your email address has appeared in a known data breach — password leaks, hacked databases, and more. Powered by Have I Been Pwned, the most trusted breach database in the world.",
   "breach_label": "Email Address",
   "breach_btn": "Check for Breaches",
-  "breach_hint": "Opens Have I Been Pwned in a new tab with your search pre-filled",
+  "breach_hint": "Validates your email, shows safety steps, then opens Have I Been Pwned — OrcaGuard never stores your email.",
   "breach_ph": "your@email.com",
   "breach_about_title": "🌐 About Have I Been Pwned",
   "breach_action_title": "⚠️ What to do if you're in a breach",
@@ -213,5 +213,8 @@
   "audit_check_eth_ok": "ETH balance looks good for covering gas fees.",
   "audit_check_lcai": "LCAI detected on Ethereum. Remember you can bridge to Lightchain Mainnet to use it in dApps.",
   "audit_check_revoke": "Check your active token approvals with Revoke.cash — unlimited approvals are a security risk. Tap the button below.",
-  "native_suffix": "(native)"
+  "native_suffix": "(native)",
+  "msg_wallet_checking": "Checking this address on Ethereum and Lightchain…",
+  "msg_breach_invalid": "That does not look like a valid email address.",
+  "msg_breach_guide": "✅ Email format looks OK.\n\nOrcaGuard does not store your email.\nNext: Have I Been Pwned opens in a new tab.\n\nOn HIBP:\n• If breaches are listed — change those passwords and enable 2FA\n• Never enter your seed phrase or wallet password on any breach site\n• Prefer a password manager + unique passwords\n\nOpening trusted site now…"
 }

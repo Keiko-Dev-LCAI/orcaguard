@@ -41,7 +41,7 @@
   "home_card_breach_title": "泄露检查",
   "home_card_breach_desc": "通过 Have I Been Pwned 查看邮箱是否出现在已知数据泄露中。",
   "home_card_buylcai_title": "安全购买 LCAI",
-  "home_card_buylcai_desc": "购买真 LCAI 的唯一验证渠道 — 以及应避免的假货。",
+  "home_card_buylcai_desc": "原生 DEX、Uniswap ERC-20、官方跨链 ERC-20→原生，以及需避开的假货。",
   "home_card_scams_title": "常见骗局",
   "home_card_scams_desc": "了解骗子窃取加密货币的最常见手段。",
   "home_card_tips_title": "技巧与帮助",
@@ -101,7 +101,7 @@
   "audit_what_p": "连接后，OrcaGuard 会自动检查：您所在的网络、ETH 余额（支付 Gas 所需）、LCAI 余额，并标记任何即时风险。如需完整授权审计，我们会链接到 Revoke.cash — 授权管理的黄金标准。",
   "audit_trust_title": "📱 Trust Wallet 提示 — 资产视图与 DApp 浏览器",
   "buylcai_title": "💰 安全购买 LCAI",
-  "buylcai_sub": "Lightchain AI（LCAI）并非所有交易所都有。骗子会创建同名假代币。以下是购买真 LCAI 的安全渠道 — 以及应避开的地方。",
+  "buylcai_sub": "LCAI 并非在所有交易所上架。以下是购买真 LCAI、将 ERC-20 跨链为原生的方法，以及应避开的地方。",
   "buylcai_safe_title": "✅ 官方 LCAI 合约（以太坊主网）",
   "buylcai_ways_title": "✅ 安全购买 LCAI 的方式",
   "buylcai_coinbase_title": "🚨 LCAI 不在 Coinbase 上",
@@ -127,7 +127,7 @@
   "breach_sub": "查看您的邮箱是否出现在已知数据泄露中 — 密码泄露、数据库被黑等。由全球最可信的泄露数据库 Have I Been Pwned 提供支持。",
   "breach_label": "邮箱地址",
   "breach_btn": "检查泄露",
-  "breach_hint": "在新标签页打开 Have I Been Pwned，并预填您的搜索",
+  "breach_hint": "验证邮箱、显示安全步骤后打开 Have I Been Pwned — 不存储邮箱。",
   "breach_ph": "your@email.com",
   "breach_about_title": "🌐 关于 Have I Been Pwned",
   "breach_action_title": "⚠️ 若您出现在泄露中该怎么办",
@@ -214,5 +214,8 @@
   "audit_check_revoke": "使用 Revoke.cash 检查活跃代币授权 — 无限授权是安全风险。点击下方按钮。",
   "native_suffix": "（原生）",
   "lang_sub": "切换整个应用 — 导航、指南和按钮。",
-  "buylcai_bridge_title": "🌉 How to bridge ERC-20 LCAI → native LCAI"
+  "buylcai_bridge_title": "🌉 如何将 ERC-20 LCAI 跨链为原生 LCAI",
+  "msg_wallet_checking": "正在以太坊与 Lightchain 上检查此地址…",
+  "msg_breach_invalid": "这不像有效的电子邮箱。",
+  "msg_breach_guide": "✅ 邮箱格式看起来正确。\n\nOrcaGuard 不会存储您的邮箱。\n下一步：打开 Have I Been Pwned。\n\n在 HIBP：\n• 若有泄露 — 改密 + 开启 2FA\n• 切勿在泄露网站输入助记词\n• 建议使用密码管理器\n\n正在打开可信网站…"
 }

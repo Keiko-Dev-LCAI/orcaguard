@@ -22,12 +22,82 @@ PORT = int(os.environ.get("PORT", 8186))
 # ════════════════════════════════════════════════════════════════════════
 
 VERIFIED_CONTRACTS = {
-    # LCAI
+    # ── Ethereum ──────────────────────────────────────────────────────────
     "0x9ca8530ca349c966fe9ef903df17a75b8a778927": {
-        "name": "LCAI Token (Ethereum Mainnet)",
+        "name": "LCAI Token (Ethereum Mainnet ERC-20)",
         "safe": True,
-        "note": "This is the official Lightchain AI token contract on Ethereum. Verified on CoinMarketCap and CoinGecko.",
-        "links": ["https://coinmarketcap.com/currencies/lightchain-ai/", "https://etherscan.io/token/0x9cA8530CA349c966Fe9ef903Df17a75B8A778927"]
+        "note": "Official Lightchain AI token on Ethereum. Verified on CoinMarketCap and CoinGecko. This is ERC-20 LCAI — bridge to Lightchain Mainnet for native gas/dApps.",
+        "links": [
+            "https://coinmarketcap.com/currencies/lightchain-ai/",
+            "https://etherscan.io/token/0x9cA8530CA349c966Fe9ef903Df17a75B8A778927",
+            "https://bridge.lightchain.ai/",
+        ],
+    },
+    # ── Lightchain official UniV2 / LCAI Swap stack (chain 9200) ─────────
+    "0x1f94c0a6cf48d3075f9713a79f87fa4eedaf7021": {
+        "name": "UniswapV2Router02 — Official LCAI Swap router",
+        "safe": True,
+        "note": "Official Lightchain UniV2-style router used by lightdex.app. Interacting via the official frontend is expected; always double-check the site is lightdex.app.",
+        "links": ["https://lightdex.app/", "https://mainnet.lightscan.app/address/0x1f94c0A6Cf48D3075f9713A79f87FA4eEdAF7021"],
+    },
+    "0xba502917c3f7233f9100f9430f4048a224a7d8de": {
+        "name": "UniswapV2Factory — Official LCAI Swap factory",
+        "safe": True,
+        "note": "Official pair factory for Lightchain native DEX liquidity pools.",
+        "links": ["https://lightdex.app/", "https://mainnet.lightscan.app/address/0xBA502917c3F7233F9100f9430f4048a224A7D8DE"],
+    },
+    "0xebf97f16d843bfd9d9e6b1857b4c00d94ca7e2b2": {
+        "name": "WLCAI — Wrapped native LCAI (official)",
+        "safe": True,
+        "note": "Wrapped native LCAI used by UniV2-style pools on Lightchain. Native LCAI itself has no ERC-20 address.",
+        "links": ["https://mainnet.lightscan.app/address/0xeBf97f16d843bFD9d9E6B1857B4C00d94ca7e2B2", "https://lightdex.app/"],
+    },
+    # ── Community / Keiko ecosystem (known-good, still use care) ─────────
+    "0xe7bd4500277f6167b6b454cf2cf529c062b4ca1a": {
+        "name": "OrcaMint NFT platform (Lightchain)",
+        "safe": True,
+        "note": "OrcaMint NFT contract on Lightchain mainnet (orcamint.xyz). Official KeikoDev/Orca app — still only interact via the real site.",
+        "links": ["https://orcamint.xyz/", "https://mainnet.lightscan.app/address/0xe7bD4500277f6167B6b454CF2CF529c062B4Ca1a"],
+    },
+    "0x93ed20e33e7c88cfa73348086ed1f2c7a2b50854": {
+        "name": "KEIKO token (Filament / Lightchain)",
+        "safe": True,
+        "note": "Community KEIKO meme token on Filament forge (graduated). Not official protocol LCAI. Only trade via filament.exchange with this exact address.",
+        "links": [
+            "https://filament.exchange/",
+            "https://mainnet.lightscan.app/address/0x93eD20e33e7C88CFa73348086ed1f2c7a2B50854",
+        ],
+    },
+    "0xde55225815c8bbd702f1d94d24b116859895beb9": {
+        "name": "KEIKO/WLCAI Uniswap V2 pair (Filament)",
+        "safe": True,
+        "note": "Liquidity pair for KEIKO on Filament. LP is burned; always verify pair + token addresses on Filament/Lightscan.",
+        "links": ["https://filament.exchange/", "https://mainnet.lightscan.app/address/0xDe55225815c8BBD702F1D94D24b116859895beB9"],
+    },
+    # ── Common Ethereum routers (legitimate infra; site context still matters) ─
+    "0x7a250d5630b4cf539739df2c5dacb4c659f2488d": {
+        "name": "Uniswap V2 Router (Ethereum)",
+        "safe": True,
+        "note": "Canonical Uniswap V2 router on Ethereum. Safe infrastructure — only use via app.uniswap.org or trusted UIs.",
+        "links": ["https://app.uniswap.org/", "https://etherscan.io/address/0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"],
+    },
+    "0xe592427a0aece92de3edee1f18e0157c05861564": {
+        "name": "Uniswap V3 SwapRouter (Ethereum)",
+        "safe": True,
+        "note": "Official Uniswap V3 router. Use only through app.uniswap.org.",
+        "links": ["https://app.uniswap.org/", "https://etherscan.io/address/0xE592427A0AEce92De3Edee1F18E0157C05861564"],
+    },
+    "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": {
+        "name": "Uniswap V3 SwapRouter02 (Ethereum)",
+        "safe": True,
+        "note": "Official Uniswap V3 Router02. Use only through app.uniswap.org.",
+        "links": ["https://app.uniswap.org/"],
+    },
+    "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad": {
+        "name": "Uniswap Universal Router (Ethereum)",
+        "safe": True,
+        "note": "Official Uniswap Universal Router. Use only through app.uniswap.org.",
+        "links": ["https://app.uniswap.org/"],
     },
 }
 
@@ -812,6 +882,10 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_check_bot()
             return
 
+        if path == "/api/check-wallet":
+            self._handle_check_wallet()
+            return
+
         if path == "/api/scan-airdrops":
             self._handle_scan_airdrops()
             return
@@ -1162,6 +1236,139 @@ Structure:
 
         threading.Thread(target=_run, daemon=True).start()
         self._send_json({"ok": True, "quick": False, "jobId": job_id, "remaining": remaining})
+
+    def _handle_check_wallet(self):
+        """Free live on-chain wallet check (no AIVM quota). Format + ETH + Lightchain facts."""
+        import urllib.request as _ur
+
+        body    = self._read_body()
+        address = (body.get("address") or "").strip()
+        if not address:
+            self._send_error("address is required")
+            return
+        if not re.match(r'^0x[0-9a-fA-F]{40}$', address):
+            self._send_json({
+                "ok": True, "verdict": "invalid",
+                "note": "This is not a valid wallet address. It must start with 0x followed by exactly 40 hex characters (0-9, a-f).",
+                "links": [],
+            })
+            return
+
+        addr = address
+        # Known contracts should not be treated as "send destination wallets"
+        known = quick_contract_check(addr)
+        if known.get("known") and known.get("verdict") == "safe":
+            self._send_json({
+                "ok": True,
+                "verdict": "caution",
+                "note": (
+                    f"This address is a KNOWN CONTRACT, not a normal personal wallet: {known.get('name')}.\n\n"
+                    f"{known.get('note', '')}\n\n"
+                    "Do not send funds here unless you fully understand what the contract does "
+                    "(e.g. you are interacting via its official app)."
+                ),
+                "links": known.get("links") or [],
+                "facts": {"isKnownContract": True, "name": known.get("name")},
+            })
+            return
+
+        ETH_RPC  = os.environ.get("ETH_RPC_URL", "https://eth.llamarpc.com")
+        LCAI_RPC = "https://rpc.mainnet.lightchain.ai"
+        results  = {}
+
+        def _rpc(rpc_url, method, params, key):
+            try:
+                payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
+                req = _ur.Request(rpc_url, data=payload, headers={"Content-Type": "application/json"})
+                with _ur.urlopen(req, timeout=8) as r:
+                    results[key] = json.loads(r.read()).get("result", None)
+            except Exception as e:
+                print(f"  [wallet/{key}] {e}")
+                results[key] = None
+
+        threads = [
+            threading.Thread(target=_rpc, args=(ETH_RPC,  "eth_getCode",             [addr, "latest"], "eth_code"), daemon=True),
+            threading.Thread(target=_rpc, args=(ETH_RPC,  "eth_getBalance",          [addr, "latest"], "eth_bal"),  daemon=True),
+            threading.Thread(target=_rpc, args=(ETH_RPC,  "eth_getTransactionCount", [addr, "latest"], "eth_tx"),   daemon=True),
+            threading.Thread(target=_rpc, args=(LCAI_RPC, "eth_getCode",             [addr, "latest"], "lcai_code"), daemon=True),
+            threading.Thread(target=_rpc, args=(LCAI_RPC, "eth_getBalance",          [addr, "latest"], "lcai_bal"),  daemon=True),
+            threading.Thread(target=_rpc, args=(LCAI_RPC, "eth_getTransactionCount", [addr, "latest"], "lcai_tx"),   daemon=True),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=9)
+
+        def _code_kind(code):
+            if code is None:
+                return "unknown"
+            if code in ("0x", "0x0", "") or len(code) <= 4:
+                return "wallet"  # EOA
+            return "contract"
+
+        def _bal_eth(hexv):
+            try:
+                return int(hexv, 16) / 1e18 if hexv else 0.0
+            except Exception:
+                return 0.0
+
+        def _nonce(hexv):
+            try:
+                return int(hexv, 16) if hexv else 0
+            except Exception:
+                return 0
+
+        eth_kind  = _code_kind(results.get("eth_code"))
+        lcai_kind = _code_kind(results.get("lcai_code"))
+        eth_bal   = _bal_eth(results.get("eth_bal"))
+        lcai_bal  = _bal_eth(results.get("lcai_bal"))
+        eth_n     = _nonce(results.get("eth_tx"))
+        lcai_n    = _nonce(results.get("lcai_tx"))
+
+        lines = [
+            "✅ Format: valid Ethereum-style address (0x + 40 hex).",
+            f"First/last characters: {addr[:8]}…{addr[-6:]}",
+            "",
+            "── Ethereum Mainnet ──",
+            f"Type: {'plain wallet (EOA)' if eth_kind == 'wallet' else ('smart contract' if eth_kind == 'contract' else 'lookup failed')}",
+            f"Balance: ~{eth_bal:.6f} ETH",
+            f"Transaction count (nonce): {eth_n:,}",
+            "",
+            "── Lightchain Mainnet (9200) ──",
+            f"Type: {'plain wallet (EOA)' if lcai_kind == 'wallet' else ('smart contract' if lcai_kind == 'contract' else 'lookup failed')}",
+            f"Balance: ~{lcai_bal:.6f} native LCAI",
+            f"Transaction count (nonce): {lcai_n:,}",
+            "",
+            "⚠️ OrcaGuard cannot prove who owns this address.",
+            "Before sending funds:",
+            "1. Confirm the address with the recipient on a separate channel",
+            "2. Re-check first 6 and last 6 characters after pasting (clipboard malware)",
+            "3. Use the correct network (ETH vs Lightchain)",
+            "4. For large amounts, send a tiny test first",
+        ]
+
+        if eth_kind == "contract" or lcai_kind == "contract":
+            verdict = "caution"
+            lines.insert(0, "⚠️ This address has smart-contract code on at least one chain — not a typical “send to friend” wallet.")
+        elif eth_n == 0 and lcai_n == 0 and eth_bal == 0 and lcai_bal == 0:
+            verdict = "caution"
+            lines.insert(0, "⚠️ No activity or balance found on Ethereum or Lightchain yet — could be brand-new, unused, or wrong address. Double-check carefully.")
+        else:
+            verdict = "caution"  # never "safe" for send destinations
+
+        self._send_json({
+            "ok": True,
+            "verdict": verdict,
+            "note": "\n".join(lines),
+            "links": [
+                f"https://etherscan.io/address/{addr}",
+                f"https://mainnet.lightscan.app/address/{addr}",
+            ],
+            "facts": {
+                "eth":  {"kind": eth_kind,  "balance": eth_bal,  "nonce": eth_n},
+                "lcai": {"kind": lcai_kind, "balance": lcai_bal, "nonce": lcai_n},
+            },
+        })
 
     def _handle_check_bot(self):
         body    = self._read_body()

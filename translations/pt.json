@@ -41,7 +41,7 @@
   "home_card_breach_title": "Verificação de violação",
   "home_card_breach_desc": "Descubra se o seu e-mail apareceu em uma violação de dados conhecida usando Have I Been Pwned.",
   "home_card_buylcai_title": "Compre LCAI com segurança",
-  "home_card_buylcai_desc": "Os únicos lugares verificados para comprar LCAI reais – e as falsificações a serem evitadas.",
+  "home_card_buylcai_desc": "DEX nativo, Uniswap ERC-20, bridge oficial ERC-20→nativo e falsificações a evitar.",
   "home_card_scams_title": "Golpes comuns",
   "home_card_scams_desc": "Conheça as táticas mais comuns que os golpistas usam para roubar detentores de criptografia.",
   "home_card_tips_title": "Dicas e ajuda",
@@ -101,7 +101,7 @@
   "audit_what_p": "Quando você se conecta, o OrcaGuard verifica automaticamente: em qual rede você está, seu saldo ETH (necessário para gás), seu saldo LCAI e sinaliza quaisquer preocupações imediatas. Para uma auditoria de aprovação completa, vinculamos você ao Revoke.cash — o padrão ouro para gerenciamento de aprovação.",
   "audit_trust_title": "📱 Dica Trust Wallet – visualização de portfólio vs. navegador DApp",
   "buylcai_title": "💰 Compre LCAI com segurança",
-  "buylcai_sub": "Lightchain AI (LCAI) não está listado em todas as bolsas. Os golpistas criam tokens falsos com o mesmo nome. Veja onde comprar LCAI reais – e onde não comprar.",
+  "buylcai_sub": "LCAI não está em todas as exchanges. Aqui onde comprar LCAI real, como fazer bridge ERC-20 para nativo, e onde não comprar.",
   "buylcai_safe_title": "✅ Contrato oficial LCAI (Ethereum Mainnet)",
   "buylcai_ways_title": "✅ Maneiras seguras de comprar LCAI",
   "buylcai_coinbase_title": "🚨 LCAI NÃO está na Coinbase",
@@ -127,7 +127,7 @@
   "breach_sub": "Descubra se o seu endereço de e-mail apareceu em uma violação de dados conhecida – vazamento de senha, bancos de dados invadidos e muito mais. Desenvolvido por Have I Been Pwned, o banco de dados de violações mais confiável do mundo.",
   "breach_label": "Endereço de email",
   "breach_btn": "Verifique se há violações",
-  "breach_hint": "Abre Fui sacaneado em uma nova guia com sua pesquisa pré-preenchida",
+  "breach_hint": "Valida o e-mail, mostra passos e abre Have I Been Pwned — OrcaGuard não guarda o e-mail.",
   "breach_ph": "seu@email.com",
   "breach_about_title": "🌐 Sobre Fui enganado",
   "breach_action_title": "⚠️ O que fazer se você estiver em uma violação",
@@ -214,5 +214,8 @@
   "audit_check_revoke": "Verifique suas aprovações de tokens ativos com Revoke.cash – aprovações ilimitadas são um risco à segurança. Toque no botão abaixo.",
   "native_suffix": "(nativo)",
   "lang_sub": "Mude o app inteiro — navegação, guias e botões.",
-  "buylcai_bridge_title": "🌉 How to bridge ERC-20 LCAI → native LCAI"
+  "buylcai_bridge_title": "🌉 Como fazer bridge de LCAI ERC-20 → LCAI nativo",
+  "msg_wallet_checking": "Verificando este endereço no Ethereum e na Lightchain…",
+  "msg_breach_invalid": "Isso não parece um e-mail válido.",
+  "msg_breach_guide": "✅ Formato de e-mail OK.\n\nOrcaGuard não guarda seu e-mail.\nEm seguida: Have I Been Pwned abre.\n\nNo HIBP:\n• Se houver vazamentos — troque senhas + 2FA\n• Nunca digite seed phrase em site de vazamento\n• Use gerenciador de senhas\n\nAbrindo site confiável…"
 }
