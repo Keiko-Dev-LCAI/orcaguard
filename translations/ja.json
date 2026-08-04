@@ -213,5 +213,6 @@
   "audit_check_lcai": "イーサリアム上でLCAIが検出されました。 Lightchain Mainnet にブリッジして dApps で使用できることを覚えておいてください。",
   "audit_check_revoke": "Revoke.cash を使用してアクティブなトークンの承認を確認します。無制限の承認はセキュリティ リスクです。下のボタンをタップしてください。",
   "native_suffix": "（ネイティブ）",
-  "lang_sub": "アプリ全体を切り替え — ナビ、ガイド、ボタンすべて。"
+  "lang_sub": "アプリ全体を切り替え — ナビ、ガイド、ボタンすべて。",
+  "buylcai_bridge_title": "🌉 How to bridge ERC-20 LCAI → native LCAI"
 }

@@ -213,5 +213,6 @@
   "audit_check_lcai": "LCAI détecté sur Ethereum. Vous pouvez le bridger vers Lightchain Mainnet.",
   "audit_check_revoke": "Vérifiez vos approbations actives sur Revoke.cash — les approbations illimitées sont un risque.",
   "native_suffix": "(natif)",
-  "lang_sub": "Changez toute l'app — navigation, guides et boutons."
+  "lang_sub": "Changez toute l'app — navigation, guides et boutons.",
+  "buylcai_bridge_title": "🌉 How to bridge ERC-20 LCAI → native LCAI"
 }
