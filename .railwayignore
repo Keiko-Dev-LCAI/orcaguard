@@ -1,0 +1,8 @@
+OrcaGuard.apk
+*.apk
+.venv/
+__pycache__/
+*.pyc
+.git/
+.idea/
+node_modules/
