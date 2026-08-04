@@ -790,7 +790,8 @@
           <input class="check-input" id="breachInput" placeholder="your@email.com" type="email" />
           <button class="check-btn" id="breachBtn" onclick="checkBreach()">Check for Breaches</button>
         </div>
-        <div style="font-size:18px;color:var(--muted);margin-top:8px" id="breachHint">Opens Have I Been Pwned in a new tab with your search pre-filled</div>
+        <div style="font-size:18px;color:var(--muted);margin-top:8px" id="breachHint">Validates your email, shows safety steps, then opens Have I Been Pwned (trusted third party) — OrcaGuard never stores your email.</div>
+        <div class="result-box" id="breachResult" style="display:none"></div>
       </div>
 
       <div class="info-card" style="border-color:rgba(0,212,255,0.25);background:rgba(0,212,255,0.04)">
@@ -847,7 +848,7 @@ I'll give you a straight answer in plain English. 🛡️</div>
   </div>
 </div>
 
-<script src="i18n-ui.js?v=20260804-1504"></script>
+<script src="i18n-ui.js?v=20260804-1518"></script>
 <script>
 const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:8186'
@@ -1033,13 +1034,10 @@ async function checkURL() {
 }
 
 // ── Wallet verifier ────────────────────────────────────────────────────
-function checkWallet() {
+async function checkWallet() {
   const input = document.getElementById('walletInput').value.trim();
-  const result = document.getElementById('walletResult');
+  const btn = document.getElementById('walletBtn');
   if (!input) return;
-
-  result.className = 'result-box';
-  result.style.display = 'block';
 
   if (!input.match(/^0x[0-9a-fA-F]{40}$/)) {
     showResult('walletResult', 'invalid', t('msg_wallet_invalid'), []);
@@ -1047,12 +1045,29 @@ function checkWallet() {
   }
 
   const addr = input;
-  // Format-valid only — never call this "safe destination". Clipboard malware swaps addresses.
-  const tip = t('msg_wallet_valid', { first6: addr.slice(0, 8), last6: addr.slice(-6) });
-  showResult('walletResult', 'caution', tip, [
-    'https://mainnet.lightscan.app/address/' + addr,
-    'https://etherscan.io/address/' + addr
-  ]);
+  if (btn) { btn.disabled = true; btn.textContent = t('btn_checking'); }
+  showResult('walletResult', 'pending', t('msg_wallet_checking') || 'Checking on-chain activity…', null);
+
+  try {
+    const r = await fetch(BACKEND_URL + '/api/check-wallet', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: addr, lang: currentLang() })
+    });
+    const d = await r.json();
+    if (d.note || d.verdict) {
+      showResult('walletResult', d.verdict || 'caution', d.note || d.error || '', d.links || []);
+    } else {
+      showResult('walletResult', 'caution', t('msg_server_unavailable'), []);
+    }
+  } catch (e) {
+    // Offline fallback — format only
+    const tip = t('msg_wallet_valid', { first6: addr.slice(0, 8), last6: addr.slice(-6) });
+    showResult('walletResult', 'caution', tip, [
+      'https://etherscan.io/address/' + addr,
+      'https://mainnet.lightscan.app/address/' + addr
+    ]);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = t('wallet_btn'); }
 }
 
 // ── Bot Detector ───────────────────────────────────────────────────────
@@ -1448,11 +1463,38 @@ function disconnectAudit() {
 // ── Breach Check ───────────────────────────────────────────────────────
 function checkBreach() {
   var email = document.getElementById('breachInput').value.trim();
+  var btn = document.getElementById('breachBtn');
   if (!email) {
-    alert(t('msg_breach_email'));
+    showResult('breachResult', 'invalid', t('msg_breach_email') || 'Enter an email address first.', []);
     return;
   }
-  window.open('https://haveibeenpwned.com/account/' + encodeURIComponent(email), '_blank');
+  // Basic email shape — enough to avoid junk opens
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showResult('breachResult', 'invalid', t('msg_breach_invalid') || 'That does not look like a valid email address.', []);
+    return;
+  }
+
+  var guide =
+    (t('msg_breach_guide') ||
+      '✅ Email format looks OK.\n\n' +
+      'OrcaGuard does not store your email and does not call a private database from this server.\n' +
+      'Next: Have I Been Pwned (haveibeenpwned.com) opens in a new tab with this address.\n\n' +
+      'On HIBP:\n' +
+      '• If breaches are listed — change those passwords and enable 2FA\n' +
+      '• Never enter your seed phrase or wallet password on any breach site\n' +
+      '• Prefer a password manager + unique passwords\n\n' +
+      'Opening trusted site now…');
+
+  showResult('breachResult', 'caution', guide, [
+    'https://haveibeenpwned.com/',
+    'https://haveibeenpwned.com/account/' + encodeURIComponent(email)
+  ]);
+
+  if (btn) {
+    btn.disabled = true;
+    setTimeout(function () { btn.disabled = false; }, 1500);
+  }
+  window.open('https://haveibeenpwned.com/account/' + encodeURIComponent(email), '_blank', 'noopener,noreferrer');
 }
 
 
