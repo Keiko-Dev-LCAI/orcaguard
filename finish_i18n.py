@@ -112,6 +112,7 @@ window.applyI18n = function() {
   set('buylcaiTitle', 'buylcai_title'); set('buylcaiSub', 'buylcai_sub');
   set('buylcaiSafeTitle', 'buylcai_safe_title'); setHTML('buylcaiSafeBody', 'buylcai_safe_html');
   set('buylcaiWaysTitle', 'buylcai_ways_title'); setHTML('buylcaiWaysBody', 'buylcai_ways_html');
+  set('buylcaiBridgeTitle', 'buylcai_bridge_title'); setHTML('buylcaiBridgeBody', 'buylcai_bridge_html');
   set('buylcaiWarn1Title', 'buylcai_coinbase_title'); set('buylcaiWarn1Body', 'buylcai_coinbase_p');
   set('buylcaiWarn2Title', 'buylcai_uniswap_title'); set('buylcaiWarn2Body', 'buylcai_uniswap_p');
   set('buylcaiVerifyTitle', 'buylcai_verify_title'); setHTML('buylcaiVerifyBody', 'buylcai_verify_html');

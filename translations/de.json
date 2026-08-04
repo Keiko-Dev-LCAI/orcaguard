@@ -213,5 +213,6 @@
   "audit_check_lcai": "LCAI auf Ethereum entdeckt. Denken Sie daran, dass Sie eine Brücke zum Lightchain Mainnet schlagen können, um es in dApps zu verwenden.",
   "audit_check_revoke": "Überprüfen Sie Ihre aktiven Token-Genehmigungen mit Revoke.cash – unbegrenzte Genehmigungen stellen ein Sicherheitsrisiko dar. Tippen Sie auf die Schaltfläche unten.",
   "native_suffix": "(einheimisch)",
-  "lang_sub": "Ganze App umstellen — Navigation, Anleitungen und Buttons."
+  "lang_sub": "Ganze App umstellen — Navigation, Anleitungen und Buttons.",
+  "buylcai_bridge_title": "🌉 How to bridge ERC-20 LCAI → native LCAI"
 }

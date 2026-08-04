@@ -33,16 +33,24 @@ VERIFIED_CONTRACTS = {
 
 VERIFIED_SITES = {
     "lightchain.ai": {"name": "Lightchain AI — Official Site", "safe": True},
+    "lightdex.app": {"name": "LCAI Swap — Official native DEX", "safe": True},
+    "www.lightdex.app": {"name": "LCAI Swap — Official native DEX", "safe": True},
     "bridge.lightchain.ai": {"name": "Lightchain Bridge — Official", "safe": True},
     "workers.lightchain.ai": {"name": "Lightchain Worker Explorer — Official", "safe": True},
     "docs.lightchain.ai": {"name": "Lightchain Documentation — Official", "safe": True},
     "dao.lightchain.ai": {"name": "Lightchain Governance — Official", "safe": True},
-    "dex-testnet.lightchain.ai": {"name": "Lightchain DEX (Testnet) — Official", "safe": True},
+    "hub.lightchain.ai": {"name": "Lightchain dApp Hub — Official", "safe": True},
     "forum.lightchain.ai": {"name": "Lightchain Forum — Official", "safe": True},
     "deploy.lightchain.ai": {"name": "Lightchain IDE — Official", "safe": True},
+    "chat.lightchain.ai": {"name": "Lightchain Chat — Official", "safe": True},
     "mainnet.lightscan.app": {"name": "Lightchain Explorer — Official", "safe": True},
-    "app.uniswap.org": {"name": "Uniswap — Official DEX", "safe": True},
+    "app.uniswap.org": {"name": "Uniswap — Official (ERC-20 LCAI on Ethereum)", "safe": True},
     "uniswap.org": {"name": "Uniswap — Official", "safe": True},
+    "filament.exchange": {"name": "Filament — Community DEX & forge on Lightchain", "safe": True},
+    "www.filament.exchange": {"name": "Filament — Community DEX & forge on Lightchain", "safe": True},
+    "orcaguard.win": {"name": "OrcaGuard — Crypto safety assistant", "safe": True},
+    "orcamint.xyz": {"name": "OrcaMint — NFT platform on Lightchain", "safe": True},
+    "dex-testnet.lightchain.ai": {"name": "Lightchain DEX (Testnet only) — Official", "safe": True},
 }
 
 KNOWN_SCAM_PATTERNS = [
@@ -58,6 +66,10 @@ KNOWN_SCAM_PATTERNS = [
     r"uninswap\.",
     r"uniswvap\.",
     r"pancakeswap\.(org|net|io)",
+    r"lightdex\.(com|io|net|org|win|xyz)",
+    r"light-dex\.",
+    r"filament\.(com|io|net|app)",
+    r"bridge\.lightchain\.(com|io|net)",
 ]
 
 # ════════════════════════════════════════════════════════════════════════
@@ -75,20 +87,27 @@ CoinMarketCap: https://coinmarketcap.com/currencies/lightchain-ai/
 CoinGecko: (search LCAI)
 Official site: lightchain.ai
 
-WHERE TO BUY LCAI SAFELY:
-- Uniswap (app.uniswap.org) — search for the official contract address above
-- Bridge to Lightchain Mainnet: bridge.lightchain.ai (after buying on Ethereum)
-- Any exchange that shows the exact contract 0x9cA8530CA349c966Fe9ef903Df17a75B8A778927
+WHERE TO BUY / GET LCAI SAFELY:
+1. Official native DEX (Lightchain Mainnet chain 9200): https://lightdex.app/ — LCAI Swap for native LCAI (gas + dApps). Bookmark only this domain.
+2. ERC-20 LCAI on Ethereum: Uniswap app.uniswap.org — search by contract 0x9cA8530CA349c966Fe9ef903Df17a75B8A778927 only, never by name alone. Slippage ~1-2%.
+3. Bridge ERC-20 → native: ONLY https://bridge.lightchain.ai/ — after bridging, switch wallet to Lightchain Mainnet (9200). Native LCAI has NO contract address on Lightchain.
+4. CEXs (e.g. BitMart) only if they list the official contract — check CoinMarketCap markets. Withdraw network carefully.
+5. Any exchange that shows the exact contract 0x9cA8530CA349c966Fe9ef903Df17a75B8A778927 for the Ethereum token.
+
+CRITICAL DISTINCTION:
+- ERC-20 LCAI (Ethereum) ≠ native LCAI (Lightchain). DApps on Lightchain need native LCAI for gas.
+- Anyone offering a "contract address for native LCAI on Lightchain" is a SCAM.
 
 WHERE LCAI IS NOT LISTED (anything claiming LCAI there is a SCAM):
 - Coinbase — NOT LISTED. Any "LCAI" on Coinbase is a fake scam token.
-- Binance — NOT LISTED as of 2026. Verify before buying.
-- Any exchange not showing the official contract address above
+- Any exchange not showing the official Ethereum contract address above (when claiming the ERC-20).
 
-Official Lightchain sites (ONLY these are real):
-- lightchain.ai, bridge.lightchain.ai, workers.lightchain.ai
-- docs.lightchain.ai, dao.lightchain.ai, forum.lightchain.ai
-- mainnet.lightscan.app, deploy.lightchain.ai
+Official / verified sites (ONLY trust these for LCAI / Lightchain tooling):
+- lightchain.ai, lightdex.app, bridge.lightchain.ai, workers.lightchain.ai
+- docs.lightchain.ai, dao.lightchain.ai, forum.lightchain.ai, hub.lightchain.ai
+- mainnet.lightscan.app, deploy.lightchain.ai, chat.lightchain.ai
+- app.uniswap.org (ERC-20 only), filament.exchange (community DEX/forge — not the official LCAI Swap)
+- orcaguard.win, orcamint.xyz
 
 == COMMON CRYPTO SCAMS TO WATCH FOR ==
 
