@@ -354,7 +354,7 @@
     <!-- CONTRACT CHECK -->
     <div class="page" id="page-contract">
       <div class="page-title" id="contractTitle">🔍 Check a Contract Address</div>
-      <div class="page-sub" id="contractSub">Paste any token contract address before you buy, approve, or interact with it. OrcaGuard will tell you if it's safe, suspicious, or a known scam — in plain English.</div>
+      <div class="page-sub" id="contractSub">Paste any token contract address before you buy, approve, or interact with it. OrcaGuard checks known lists, live explorer data when possible, and AI analysis — then gives a plain-English SAFE / CAUTION / DANGER verdict.</div>
 
       <div class="check-box">
         <div class="check-label" id="contractLabel">Token or Contract Address</div>
@@ -847,7 +847,7 @@ I'll give you a straight answer in plain English. 🛡️</div>
   </div>
 </div>
 
-<script src="i18n-ui.js?v=20260804-1455"></script>
+<script src="i18n-ui.js?v=20260804-1504"></script>
 <script>
 const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:8186'
@@ -984,10 +984,11 @@ async function checkContract() {
     } else if (d.quick) {
       showResult('contractResult', d.verdict, d.note || d.name, d.links || []);
     } else if (d.jobId) {
-      showResult('contractResult', 'pending', t('msg_analyzing_ai'), null);
+      const liveLinks = [d.etherscanUrl, d.lightscanUrl].filter(Boolean);
+      showResult('contractResult', 'pending', t('msg_analyzing_ai'), liveLinks.length ? liveLinks : null);
       pollJob(d.jobId,
-        answer => showResult('contractResult', guessVerdict(answer), answer, []),
-        err    => showResult('contractResult', 'caution', t('msg_ai_failed', {err: err}), [])
+        answer => showResult('contractResult', guessVerdict(answer), answer, liveLinks),
+        err    => showResult('contractResult', 'caution', t('msg_ai_failed', {err: err}), liveLinks)
       );
     }
   } catch (e) {
@@ -1046,8 +1047,12 @@ function checkWallet() {
   }
 
   const addr = input;
-  showResult('walletResult', 'safe',
-    t('msg_wallet_valid', { first6: addr.slice(0, 8), last6: addr.slice(-6) }), []);
+  // Format-valid only — never call this "safe destination". Clipboard malware swaps addresses.
+  const tip = t('msg_wallet_valid', { first6: addr.slice(0, 8), last6: addr.slice(-6) });
+  showResult('walletResult', 'caution', tip, [
+    'https://mainnet.lightscan.app/address/' + addr,
+    'https://etherscan.io/address/' + addr
+  ]);
 }
 
 // ── Bot Detector ───────────────────────────────────────────────────────

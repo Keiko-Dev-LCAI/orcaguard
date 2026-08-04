@@ -602,33 +602,51 @@ def quick_contract_check(address: str) -> dict:
 
 def quick_url_check(url: str) -> dict:
     """Instant check against known safe/scam sites."""
+    raw = (url or "").strip()
     try:
-        parsed = urlparse(url if "://" in url else "https://" + url)
-        domain = parsed.netloc.lower().lstrip("www.")
+        parsed = urlparse(raw if "://" in raw else "https://" + raw)
+        domain = (parsed.netloc or "").lower()
+        if domain.startswith("www."):
+            domain = domain[4:]
+        # Drop userinfo / port for matching
+        domain = domain.split("@")[-1].split(":")[0]
     except Exception:
-        domain = url.lower().strip()
+        domain = raw.lower().strip()
+
+    if not domain:
+        return {"verdict": "invalid", "known": True,
+                "note": "That doesn't look like a full website address. Paste the full URL from your browser bar (starts with https://)."}
 
     if domain in VERIFIED_SITES:
         s = VERIFIED_SITES[domain]
         return {"verdict": "safe", "known": True, "name": s["name"]}
 
     for pattern in KNOWN_SCAM_PATTERNS:
-        if re.search(pattern, url.lower()):
+        if re.search(pattern, raw.lower()) or re.search(pattern, domain):
             return {"verdict": "danger", "known": True,
-                    "note": f"This URL matches a known scam pattern. Do NOT connect your wallet to this site."}
+                    "note": "This URL matches a known scam pattern. Do NOT connect your wallet to this site."}
 
-    # Suspicious patterns
+    # Suspicious patterns — brand impersonation is the main wallet-drainer risk
     warnings = []
-    if re.search(r'lightchain', domain) and domain not in VERIFIED_SITES:
-        warnings.append("Claims to be Lightchain but is not an official domain")
+    if re.search(r'lightchain|lcai', domain) and domain not in VERIFIED_SITES:
+        warnings.append("Looks Lightchain-related but is NOT on the official verified list")
+    if re.search(r'lightdex|light-dex|lcai.?swap', domain) and domain not in VERIFIED_SITES:
+        warnings.append("Looks like the official DEX but is not lightdex.app — high phishing risk")
+    if re.search(r'filament', domain) and domain not in VERIFIED_SITES:
+        warnings.append("Looks Filament-related but is not filament.exchange")
     if re.search(r'uniswap', domain) and "uniswap.org" not in domain:
-        warnings.append("Claims to be Uniswap but is not app.uniswap.org")
-    if re.search(r'(free|claim|airdrop|bonus|reward)', domain):
+        warnings.append("Claims to be Uniswap but is not app.uniswap.org / uniswap.org")
+    if re.search(r'metamask|trustwallet|coinbase', domain) and domain not in VERIFIED_SITES:
+        warnings.append("Uses a wallet brand name in the domain — common phishing pattern")
+    if re.search(r'(free|claim|airdrop|bonus|reward|giveaway)', domain):
         warnings.append("Domain contains words commonly used in crypto scams")
+    if re.search(r'\d{2,}', domain) and re.search(r'lightchain|uniswap|lcai|lightdex', domain):
+        warnings.append("Numbers in a brand-like domain often mean a lookalike scam site")
 
     if warnings:
         return {"verdict": "caution", "known": True, "warnings": warnings,
-                "note": "This site shows suspicious patterns. Do NOT connect your wallet without verifying further."}
+                "note": "This site shows suspicious patterns. Do NOT connect your wallet without verifying further.\n\n• "
+                        + "\n• ".join(warnings)}
 
     return {"verdict": "unknown", "known": False}
 
@@ -636,7 +654,8 @@ def quick_url_check(url: str) -> dict:
 # AI RATE LIMITER — 5 AIVM calls per IP per day
 # ════════════════════════════════════════════════════════════════════════
 
-AI_DAILY_LIMIT = 5
+# Free safety checks per IP per day (contract / URL / bot / ask share this budget)
+AI_DAILY_LIMIT = 12
 _ip_usage      = {}   # { ip: {"count": N, "date": "YYYY-MM-DD"} }
 _ip_lock       = threading.Lock()
 
@@ -858,21 +877,214 @@ class Handler(BaseHTTPRequestHandler):
                              "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
             return
 
-        # Use AIVM for analysis
-        prompt = f"""A user wants to know if this contract address is safe to interact with:
+        # Live data enrichment — Etherscan + Ethereum RPC + Lightchain RPC
+        import urllib.request as _ur
+        import datetime as _dt
 
-Contract address: {address}
+        addr_norm = address if address.startswith("0x") else ("0x" + address)
+        addr_norm = addr_norm[:42]
 
-Please analyze this address. Check if it matches any known legitimate projects. Explain what you know about it and give a clear SAFE / CAUTION / DANGER verdict with specific instructions on what the user should do next. If you don't recognize it, explain how they can verify it themselves."""
+        ETHERSCAN_KEY = os.environ.get("ETHERSCAN_API_KEY", "")
+        key_param     = f"&apikey={ETHERSCAN_KEY}" if ETHERSCAN_KEY else ""
+        ETH_RPC       = os.environ.get("ETH_RPC_URL", "https://eth.llamarpc.com")
+        LCAI_RPC      = "https://rpc.mainnet.lightchain.ai"
+        es_link       = f"https://etherscan.io/address/{addr_norm}"
+        ls_link       = f"https://mainnet.lightscan.app/address/{addr_norm}"
+
+        results = {
+            "source": None, "txlist_asc": None, "txlist_desc": None,
+            "eth_code": None, "eth_tx": None, "eth_bal": None,
+            "lcai_code": None, "lcai_tx": None,
+        }
+
+        def _es_source():
+            try:
+                url = (
+                    "https://api.etherscan.io/v2/api?chainid=1"
+                    f"&module=contract&action=getsourcecode&address={addr_norm}{key_param}"
+                )
+                req = _ur.Request(url, headers={"User-Agent": "OrcaGuard/1.0"})
+                with _ur.urlopen(req, timeout=10) as r:
+                    data = json.loads(r.read())
+                if data.get("status") == "1":
+                    results["source"] = data.get("result", [None])[0]
+                else:
+                    results["source"] = {}  # confirmed empty / not verified
+            except Exception as e:
+                print(f"  [Etherscan/source] {e}")
+
+        def _es_txlist(sort, key):
+            try:
+                url = (
+                    "https://api.etherscan.io/v2/api?chainid=1"
+                    f"&module=account&action=txlist&address={addr_norm}"
+                    f"&startblock=0&endblock=99999999&page=1&offset=8&sort={sort}{key_param}"
+                )
+                req = _ur.Request(url, headers={"User-Agent": "OrcaGuard/1.0"})
+                with _ur.urlopen(req, timeout=10) as r:
+                    data = json.loads(r.read())
+                msg = data.get("message", "")
+                if data.get("status") == "1":
+                    results[key] = data.get("result", [])
+                elif "No transactions" in msg or "No records" in msg:
+                    results[key] = []
+            except Exception as e:
+                print(f"  [Etherscan/txlist-{sort}] {e}")
+
+        def _rpc(rpc_url, method, params, key):
+            try:
+                payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
+                req = _ur.Request(rpc_url, data=payload, headers={"Content-Type": "application/json"})
+                with _ur.urlopen(req, timeout=8) as r:
+                    results[key] = json.loads(r.read()).get("result", None)
+            except Exception as e:
+                print(f"  [RPC/{key}] {e}")
+
+        threads = [
+            threading.Thread(target=_es_source, daemon=True),
+            threading.Thread(target=_es_txlist, args=("asc",  "txlist_asc"),  daemon=True),
+            threading.Thread(target=_es_txlist, args=("desc", "txlist_desc"), daemon=True),
+            threading.Thread(target=_rpc, args=(ETH_RPC,  "eth_getCode",             [addr_norm, "latest"], "eth_code"), daemon=True),
+            threading.Thread(target=_rpc, args=(ETH_RPC,  "eth_getTransactionCount", [addr_norm, "latest"], "eth_tx"),   daemon=True),
+            threading.Thread(target=_rpc, args=(ETH_RPC,  "eth_getBalance",          [addr_norm, "latest"], "eth_bal"),  daemon=True),
+            threading.Thread(target=_rpc, args=(LCAI_RPC, "eth_getCode",             [addr_norm, "latest"], "lcai_code"), daemon=True),
+            threading.Thread(target=_rpc, args=(LCAI_RPC, "eth_getTransactionCount", [addr_norm, "latest"], "lcai_tx"),   daemon=True),
+        ]
+        for t in threads:
+            t.start()
 
         import uuid
         job_id = str(uuid.uuid4())[:12]
         with _jobs_lock:
-            _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "contract", "address": address}
+            _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "contract", "address": addr_norm}
+
+        # Return jobId immediately — enrichment + AIVM run in background
+        self._send_json({
+            "ok": True, "quick": False, "jobId": job_id, "remaining": remaining,
+            "etherscanUrl": es_link,
+            "lightscanUrl": ls_link,
+        })
+
+        _threads  = threads
+        _results  = results
+        _address  = addr_norm
+        _es_link  = es_link
+        _ls_link  = ls_link
 
         def _run():
+            for t in _threads:
+                t.join(timeout=12)
+
+            # ── Ethereum: contract vs empty wallet (EOA) ─────────────────────
+            eth_code = _results.get("eth_code")
+            if eth_code is None:
+                eth_type = "Ethereum code lookup: unavailable"
+            elif eth_code in ("0x", "0x0", "") or len(eth_code) <= 4:
+                eth_type = "Ethereum: NO contract code — this is a plain wallet address (EOA), not a token/smart contract. Do not treat it as a buyable token contract."
+            else:
+                eth_type = f"Ethereum: smart contract code present ({len(eth_code)//2 - 1} bytes bytecode approx)"
+
+            eth_tx_raw = _results.get("eth_tx")
+            eth_tx_n   = int(eth_tx_raw, 16) if eth_tx_raw else 0
+            eth_bal_raw = _results.get("eth_bal")
+            try:
+                eth_bal_eth = (int(eth_bal_raw, 16) / 1e18) if eth_bal_raw else 0.0
+            except Exception:
+                eth_bal_eth = 0.0
+            eth_act = f"Ethereum nonce/tx count: {eth_tx_n:,}; ETH balance ~{eth_bal_eth:.6f} ETH"
+
+            # ── Etherscan verification ───────────────────────────────────────
+            src           = _results.get("source")
+            if src is None:
+                verified_line = "Etherscan verification: data unavailable (API/network error)"
+                contract_name = "Unknown"
+            else:
+                has_source    = bool((src or {}).get("SourceCode", ""))
+                contract_name = (src or {}).get("ContractName", "").strip() or "Unknown"
+                compiler      = (src or {}).get("CompilerVersion", "").strip() or "Unknown"
+                is_proxy      = (src or {}).get("IsProxy", "0") == "1"
+                if has_source:
+                    verified_line = f"Etherscan verified: YES — Name: {contract_name}, Compiler: {compiler}"
+                    if is_proxy:
+                        verified_line += " — PROXY (implementation may differ; still verify carefully)"
+                else:
+                    verified_line = "Etherscan verified: NO — source code not published (major red flag if this is sold as a token or holds funds)"
+
+            # ── Deployment / age ─────────────────────────────────────────────
+            oldest = _results.get("txlist_asc") or []
+            if oldest:
+                first    = oldest[0]
+                deployer = first.get("from", "Unknown")
+                ts       = int(first.get("timeStamp", 0) or 0)
+                if ts:
+                    age_days    = int((time.time() - ts) / 86400)
+                    deploy_date = _dt.datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+                    age_str     = f"{age_days} days old (first seen {deploy_date} UTC)"
+                else:
+                    age_str = "Unknown age"
+            else:
+                deployer = "Not found on Ethereum mainnet tx history"
+                age_str  = "No Ethereum normal transactions found (new, inactive, or not on ETH)"
+
+            recent  = _results.get("txlist_desc") or []
+            if recent:
+                latest_ts  = int(recent[0].get("timeStamp", 0) or 0)
+                days_since = int((time.time() - latest_ts) / 86400) if latest_ts else 0
+                activity_line = f"Recent Ethereum activity: sample of {len(recent)} txs; last one ~{days_since} days ago"
+            else:
+                activity_line = "Recent Ethereum activity: none found in sample"
+
+            # ── Lightchain ───────────────────────────────────────────────────
+            lcai_code = _results.get("lcai_code")
+            if lcai_code is None:
+                lcai_line = "Lightchain: lookup unavailable"
+            elif lcai_code in ("0x", "0x0", "") or len(lcai_code) <= 4:
+                lcai_line = "Lightchain: no contract code at this address"
+            else:
+                lcai_line = "Lightchain: contract code present at this address"
+            lcai_tx_raw = _results.get("lcai_tx")
+            lcai_tx_n   = int(lcai_tx_raw, 16) if lcai_tx_raw else 0
+            if lcai_tx_n:
+                lcai_line += f", ~{lcai_tx_n:,} txs (nonce)"
+
+            chain_context = (
+                f"{eth_type}\n"
+                f"{eth_act}\n"
+                f"{verified_line}\n"
+                f"Deployer / first-from wallet: {deployer}\n"
+                f"Age: {age_str}\n"
+                f"{activity_line}\n"
+                f"{lcai_line}\n"
+                f"Etherscan: {_es_link}\n"
+                f"Lightscan: {_ls_link}"
+            )
+
+            prompt = f"""You are OrcaGuard. A non-technical user wants to know if this address is safe to BUY, APPROVE, or INTERACT WITH as a crypto contract/token.
+
+Address: {_address}
+
+Live chain data (use these facts; do not invent explorer stats):
+{chain_context}
+
+Rules for your verdict:
+- Prefer CAUTION or DANGER when data is missing, code is unverified, the address is brand-new, or it is only a plain wallet (EOA) being sold as a "token".
+- "Etherscan verified" is helpful but NOT a guarantee of safety (scams can verify).
+- If there is NO contract code on Ethereum, explain it is not a normal token contract — DANGER or CAUTION for "buying this token".
+- Never tell the user to share seed phrases or private keys.
+- Always give concrete next steps: e.g. compare contract on CoinMarketCap, use OrcaGuard URL check on the site they came from, start with tiny amount, check sellability, revoke approvals later.
+
+Structure:
+1. VERDICT: 🟢 SAFE / 🟡 CAUTION / 🔴 DANGER
+2. Plain English (2–5 short sentences) citing the live facts above
+3. What to do next (bullets)
+
+Be direct. Protect the user from loss."""
+
             try:
                 answer = run_inference(prompt)
+                # Append explorer links so the UI can still surface them if model omits
+                if _es_link not in answer:
+                    answer = answer.rstrip() + f"\n\nReview on Etherscan: {_es_link}"
                 with _jobs_lock:
                     _jobs[job_id] = {"status": "done", "ts": time.time(), "answer": answer, "type": "contract"}
             except Exception as e:
@@ -880,7 +1092,6 @@ Please analyze this address. Check if it matches any known legitimate projects. 
                     _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
 
         threading.Thread(target=_run, daemon=True).start()
-        self._send_json({"ok": True, "quick": False, "jobId": job_id})
 
     def _handle_check_url(self):
         body = self._read_body()
@@ -902,16 +1113,38 @@ Please analyze this address. Check if it matches any known legitimate projects. 
                              "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
             return
 
-        prompt = f"""A user wants to know if this website is safe to connect their crypto wallet to:
+        # Domain summary for the model (parsed server-side)
+        try:
+            _p = urlparse(url if "://" in url else "https://" + url)
+            _dom = (_p.netloc or "").lower()
+            if _dom.startswith("www."):
+                _dom = _dom[4:]
+            _dom = _dom.split("@")[-1].split(":")[0]
+        except Exception:
+            _dom = url
+
+        prompt = f"""You are OrcaGuard. A non-technical user wants to know if it is safe to OPEN this site and CONNECT a crypto wallet.
 
 URL: {url}
+Parsed domain: {_dom}
 
-Please analyze this URL carefully. Check for:
-- Is it an official site or a known phishing/scam site?
-- Any suspicious patterns in the domain name?
-- Is it claiming to be a legitimate service (Uniswap, Lightchain, etc.) when it isn't?
+Official Lightchain / LCAI tooling domains include (non-exhaustive): lightchain.ai and subdomains like bridge/docs/dao/workers/hub, lightdex.app, mainnet.lightscan.app, orcaguard.win, orcamint.xyz. Official Uniswap is app.uniswap.org. Filament community is filament.exchange.
 
-Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
+Check carefully for:
+- Typosquatting / lookalike domains (extra letters, numbers, wrong TLD)
+- Fake Uniswap, MetaMask, bridge, airdrop, or "support" sites
+- HTTP vs HTTPS, odd subdomains, or IP-looking hosts
+- Anything urging seed phrase entry (always DANGER)
+
+Rules:
+- Prefer CAUTION or DANGER when unsure — connecting a wallet to a phishing site can drain everything.
+- SAFE only if you are confident it is a known legitimate domain.
+- Never ask for seed phrases.
+
+Structure:
+1. VERDICT: 🟢 SAFE / 🟡 CAUTION / 🔴 DANGER
+2. Plain English (why)
+3. What to do next (bookmark official sites; do not connect if unsure)"""
 
         import uuid
         job_id = str(uuid.uuid4())[:12]
@@ -928,7 +1161,7 @@ Give a clear SAFE / CAUTION / DANGER verdict and specific instructions."""
                     _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
 
         threading.Thread(target=_run, daemon=True).start()
-        self._send_json({"ok": True, "quick": False, "jobId": job_id})
+        self._send_json({"ok": True, "quick": False, "jobId": job_id, "remaining": remaining})
 
     def _handle_check_bot(self):
         body    = self._read_body()
