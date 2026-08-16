@@ -112,7 +112,7 @@ window.ORCAGUARD_I18N = {
     mnav_ask: "Ask AI",
     mnav_audit: "Audit",
     mnav_breach: "Breach",
-    mnav_buylcai: "Buy & Bridge LCAI",
+    mnav_buylcai: "Buy/Bridge",
     mnav_contract: "Contract",
     mnav_home: "Home",
     mnav_scams: "Scams",
