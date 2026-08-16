@@ -254,7 +254,7 @@
     </div>
     <div class="sidebar-label" id="sidebarLabelResources">Resources</div>
     <div class="nav-item" onclick="showPage('buylcai')" id="nav-buylcai">
-      <span class="nav-icon">💰</span><span id="navBuylcai">Buy LCAI Safely</span>
+      <span class="nav-icon">💰</span><span id="navBuylcai">Buy &amp; Bridge LCAI</span>
     </div>
     <div class="nav-item" onclick="showPage('scams')" id="nav-scams">
       <span class="nav-icon">🚨</span><span id="navScams">Common Scams</span>
@@ -320,8 +320,8 @@
         </div>
         <div class="section-card" onclick="showPage('buylcai')">
           <div class="section-card-icon">💰</div>
-          <div class="section-card-title" id="cardBuylcaiT">Buy LCAI Safely</div>
-          <div class="section-card-desc" id="cardBuylcaiD">The only verified places to buy real LCAI — and the fakes to avoid.</div>
+          <div class="section-card-title" id="cardBuylcaiT">Buy &amp; Bridge LCAI</div>
+          <div class="section-card-desc" id="cardBuylcaiD">Buy ERC-20, bridge to native LCAI for gas &amp; dApps — official links only, and fakes to avoid.</div>
         </div>
         <div class="section-card" onclick="showPage('scams')">
           <div class="section-card-icon">🚨</div>
@@ -539,10 +539,10 @@
       </div>
     </div>
 
-    <!-- BUY LCAI SAFELY -->
+    <!-- BUY & BRIDGE LCAI -->
     <div class="page" id="page-buylcai">
-      <div class="page-title" id="buylcaiTitle">💰 Buy LCAI Safely</div>
-      <div class="page-sub" id="buylcaiSub">Lightchain AI (LCAI) is not listed on every exchange. Scammers create fake tokens with the same name. Here's where to buy real LCAI — and where not to.</div>
+      <div class="page-title" id="buylcaiTitle">💰 Buy &amp; Bridge LCAI</div>
+      <div class="page-sub" id="buylcaiSub">Buy real LCAI safely, then bridge ERC-20 → <strong style="color:#fff">native LCAI</strong> for gas, votes, and Lightchain dApps. Official links only — scammers clone the name.</div>
 
       <div class="safe-banner">
         <div class="safe-banner-title" id="buylcaiSafeTitle">✅ Official LCAI Contract (Ethereum Mainnet)</div>
@@ -551,17 +551,11 @@
         <p style="margin-top:8px">Verify at: <a href="https://coinmarketcap.com/currencies/lightchain-ai/" target="_blank">CoinMarketCap</a> · <a href="https://etherscan.io/token/0x9cA8530CA349c966Fe9ef903Df17a75B8A778927" target="_blank">Etherscan</a></p></div>
       </div>
 
-      <div class="info-card">
-        <div class="info-card-title" id="buylcaiWaysTitle">✅ Safe Ways to Buy LCAI</div>
-        <div id="buylcaiWaysBody"><p><strong style="color:#fff">1. Official Lightchain DEX — LCAI Swap (native)</strong> — Best for <strong>native LCAI</strong> on Lightchain Mainnet (chain <strong>9200</strong>): gas, dApps, minting. Use only <a href="https://lightdex.app/" target="_blank" rel="noopener" style="color:var(--cyan)">lightdex.app</a>. Bookmark it. This is <strong>not</strong> the same as ERC-20 LCAI on Ethereum.</p>
-        <p style="margin-top:10px"><strong style="color:#fff">2. Uniswap on Ethereum (ERC-20 LCAI)</strong> — For the <strong>Ethereum</strong> token only: <a href="https://app.uniswap.org" target="_blank" rel="noopener" style="color:var(--cyan)">app.uniswap.org</a>. Search by the <strong>contract address above</strong>, never by name alone. Slippage 1–2%. ERC-20 LCAI on Ethereum <strong>cannot</strong> pay gas on Lightchain until you bridge.</p>
-        <p style="margin-top:10px"><strong style="color:#fff">3. Bridge ERC-20 → native</strong> — After you hold official ERC-20 LCAI on Ethereum, use the official bridge (steps in the next section) to receive <strong>native LCAI</strong> on Lightchain.</p>
-        <p style="margin-top:10px"><strong style="color:#fff">4. Centralized exchanges</strong> — e.g. BitMart and others listed on <a href="https://coinmarketcap.com/currencies/lightchain-ai/" target="_blank" rel="noopener" style="color:var(--cyan)">CoinMarketCap</a>. Always match the official contract. Withdraw carefully (network selection matters).</p></div>
-      </div>
-
-      <div class="safe-banner" style="border-color:rgba(0,212,255,0.35)">
+      <!-- Bridge first (most-needed for Lightchain) -->
+      <div class="safe-banner" style="border-color:rgba(0,212,255,0.35)" id="buylcaiBridgeSection">
         <div class="safe-banner-title" id="buylcaiBridgeTitle">🌉 How to bridge ERC-20 LCAI → native LCAI</div>
-        <div id="buylcaiBridgeBody"><p><strong style="color:#fff">Why bridge?</strong> Uniswap and many CEXs deal in <strong>ERC-20 LCAI on Ethereum</strong>. Lightchain dApps (gas, OrcaMint, workers, etc.) need <strong>native LCAI on Lightchain Mainnet (9200)</strong>. They are related but not interchangeable until you bridge.</p>
+        <div id="buylcaiBridgeBody"><p><strong style="color:#fff">Why bridge?</strong> Uniswap and many CEXs deal in <strong>ERC-20 LCAI on Ethereum</strong>. Lightchain dApps (gas, OrcaMint, workers, votes, etc.) need <strong>native LCAI on Lightchain Mainnet (9200)</strong>. They are related but not interchangeable until you bridge.</p>
+        <p style="margin-top:12px"><a href="https://bridge.lightchain.ai/" target="_blank" rel="noopener" class="check-btn" style="display:inline-block;text-decoration:none;padding:12px 22px">Open official bridge →</a></p>
         <div style="display:grid;gap:10px;margin-top:14px">
           <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px 14px"><div style="font-weight:700;color:#fff;margin-bottom:4px">1. Hold official ERC-20 LCAI on Ethereum</div><p style="margin:0">Buy on Uniswap with the official contract, or withdraw from a verified CEX to your Ethereum wallet. Confirm the token address is exactly <code style="color:var(--cyan);font-size:15px;word-break:break-all">0x9cA8530CA349c966Fe9ef903Df17a75B8A778927</code>.</p></div>
           <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px 14px"><div style="font-weight:700;color:#fff;margin-bottom:4px">2. Wallet on Ethereum Mainnet</div><p style="margin:0">In MetaMask / Trust / etc., select <strong style="color:#fff">Ethereum Mainnet</strong>. Keep a little ETH for Ethereum gas (approvals + bridge tx).</p></div>
@@ -571,6 +565,14 @@
           <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:12px 14px"><div style="font-weight:700;color:#fff;margin-bottom:4px">6. Use native LCAI</div><p style="margin:0">Gas for dApps, and swaps on <a href="https://lightdex.app/" target="_blank" rel="noopener" style="color:var(--cyan)">lightdex.app</a>. Native LCAI has <strong>no ERC-20 contract address</strong> on Lightchain — anyone giving you a “native LCAI contract” is scamming.</p></div>
         </div>
         <p style="margin-top:14px;color:var(--yellow)">⚠️ Never bridge through a random website. Never send ERC-20 LCAI to a Lightchain address on the wrong network. If the bridge fails, use official Discord/docs — never seed phrases.</p></div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-title" id="buylcaiWaysTitle">✅ Safe Ways to Buy LCAI</div>
+        <div id="buylcaiWaysBody"><p><strong style="color:#fff">1. Official Lightchain DEX — LCAI Swap (native)</strong> — Best for <strong>native LCAI</strong> on Lightchain Mainnet (chain <strong>9200</strong>): gas, dApps, minting. Use only <a href="https://lightdex.app/" target="_blank" rel="noopener" style="color:var(--cyan)">lightdex.app</a>. Bookmark it. This is <strong>not</strong> the same as ERC-20 LCAI on Ethereum.</p>
+        <p style="margin-top:10px"><strong style="color:#fff">2. Uniswap on Ethereum (ERC-20 LCAI)</strong> — For the <strong>Ethereum</strong> token only: <a href="https://app.uniswap.org" target="_blank" rel="noopener" style="color:var(--cyan)">app.uniswap.org</a>. Search by the <strong>contract address above</strong>, never by name alone. Slippage 1–2%. ERC-20 LCAI on Ethereum <strong>cannot</strong> pay gas on Lightchain until you bridge.</p>
+        <p style="margin-top:10px"><strong style="color:#fff">3. Bridge ERC-20 → native</strong> — After you hold official ERC-20 LCAI on Ethereum, use the official bridge (steps above) to receive <strong>native LCAI</strong> on Lightchain.</p>
+        <p style="margin-top:10px"><strong style="color:#fff">4. Centralized exchanges</strong> — e.g. BitMart and others listed on <a href="https://coinmarketcap.com/currencies/lightchain-ai/" target="_blank" rel="noopener" style="color:var(--cyan)">CoinMarketCap</a>. Always match the official contract. Withdraw carefully (network selection matters).</p></div>
       </div>
 
       <div class="warning-banner">
@@ -1557,7 +1559,7 @@ showPage('home');
     <button class="mobile-nav-btn" onclick="showPage('wallet')" data-page="wallet"><span class="mnav-icon">📬</span><span id="mnavWallet">Wallet</span></button>
     <button class="mobile-nav-btn" onclick="showPage('audit')" data-page="audit"><span class="mnav-icon">🔐</span><span id="mnavAudit">Audit</span></button>
     <button class="mobile-nav-btn" onclick="showPage('breach')" data-page="breach"><span class="mnav-icon">🔓</span><span id="mnavBreach">Breach</span></button>
-    <button class="mobile-nav-btn" onclick="showPage('buylcai')" data-page="buylcai"><span class="mnav-icon">💰</span><span id="mnavBuylcai">Buy LCAI</span></button>
+    <button class="mobile-nav-btn" onclick="showPage('buylcai')" data-page="buylcai"><span class="mnav-icon">💰</span><span id="mnavBuylcai">Buy/Bridge</span></button>
     <button class="mobile-nav-btn" onclick="showPage('scams')" data-page="scams"><span class="mnav-icon">🚨</span><span id="mnavScams">Scams</span></button>
     <button class="mobile-nav-btn" onclick="showPage('tips')" data-page="tips"><span class="mnav-icon">💡</span><span id="mnavTips">Tips</span></button>
     <button class="mobile-nav-btn" onclick="showPage('ask')" data-page="ask"><span class="mnav-icon">🤖</span><span id="mnavAsk">Ask AI</span></button>
