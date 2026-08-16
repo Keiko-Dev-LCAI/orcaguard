@@ -512,7 +512,7 @@
         <!-- Airdrop Scanner -->
         <div class="check-box" style="margin-bottom:20px">
           <div class="check-label" id="auditAirdropLabel">🪂 Airdrop Scam Scanner</div>
-          <div style="font-size:18px;color:var(--muted);margin-bottom:14px;line-height:1.6" id="auditAirdropDesc">Scammers airdrop fake tokens into wallets to trick you into visiting phishing sites or approving malicious contracts. This scanner checks all ERC-20 tokens your wallet ever received on Ethereum and flags anything suspicious.</div>
+          <div style="font-size:18px;color:var(--muted);margin-bottom:14px;line-height:1.6" id="auditAirdropDesc">Scammers airdrop fake tokens into wallets to trick you into visiting phishing sites or approving malicious contracts. This scanner checks ERC-20 tokens on <strong style="color:#fff">Ethereum and Lightchain Mainnet</strong> and flags suspicious names. Known community tokens (e.g. KEIKO) are not treated as scams. Native LCAI is not an ERC-20 so it will not appear here.</div>
           <button class="check-btn" id="airdropScanBtn" onclick="scanAirdrops()">Scan for Scam Tokens</button>
           <div id="airdropResult" style="margin-top:16px"></div>
         </div>
@@ -1228,20 +1228,25 @@ async function connectWalletAudit() {
     const address  = accounts[0];
     const chainId  = (await window.ethereum.request({ method: 'eth_chainId' })).toLowerCase();
 
-    // ETH balance
+    // Native balance of the *currently selected* network
     const balHex   = await window.ethereum.request({ method: 'eth_getBalance', params: [address, 'latest'] });
-    const ethBal   = (parseInt(balHex, 16) / 1e18).toFixed(4);
+    const nativeBal = (parseInt(balHex, 16) / 1e18);
 
-    // LCAI ERC-20 balance (only meaningful on Ethereum Mainnet)
-    let lcaiBal = '—';
+    // Labels differ by chain: ETH mainnet vs Lightchain native LCAI
+    let ethLabel = '—';
+    let lcaiLabel = '—';
     if (chainId === '0x1') {
+      ethLabel = nativeBal.toFixed(4) + ' ETH';
       try {
         const data   = '0x70a08231' + address.slice(2).padStart(64, '0');
         const lcaiHex = await window.ethereum.request({ method: 'eth_call', params: [{ to: LCAI_CONTRACT, data }, 'latest'] });
-        lcaiBal = (parseInt(lcaiHex, 16) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });
-      } catch(e) { lcaiBal = 'Error'; }
+        lcaiLabel = (parseInt(lcaiHex, 16) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' LCAI (ERC-20)';
+      } catch(e) { lcaiLabel = 'Error'; }
     } else if (chainId === '0x23f0') {
-      lcaiBal = ethBal + ' ' + t('native_suffix');
+      ethLabel = t('audit_eth_switch_hint') || 'Switch to Ethereum to read ETH';
+      lcaiLabel = nativeBal.toFixed(4) + ' LCAI ' + t('native_suffix');
+    } else {
+      ethLabel = nativeBal.toFixed(4) + ' (native)';
     }
 
     // Display
@@ -1252,8 +1257,8 @@ async function connectWalletAudit() {
 
     const net = netInfo(chainId);
     document.getElementById('auditNetwork').innerHTML = '<span style="color:' + net.color + '">' + net.name + '</span>';
-    document.getElementById('auditEth').textContent = ethBal + ' ETH';
-    document.getElementById('auditLcai').textContent = lcaiBal + (chainId === '0x1' ? ' LCAI' : '');
+    document.getElementById('auditEth').textContent = ethLabel;
+    document.getElementById('auditLcai').textContent = lcaiLabel;
 
     // Show switch-network button for known chains
     document.getElementById('auditSwitchEth').style.display  = (chainId !== '0x1')     ? 'inline-block' : 'none';
@@ -1268,13 +1273,21 @@ async function connectWalletAudit() {
       checks.push({ ok: false, text: t('audit_check_wrong_net', {network: net.name}) });
     }
 
-    if (chainId === '0x1' && parseFloat(ethBal) < 0.005) {
-      checks.push({ ok: false, text: t('audit_check_low_eth', {bal: ethBal}) });
+    if (chainId === '0x1' && nativeBal < 0.005) {
+      checks.push({ ok: false, text: t('audit_check_low_eth', {bal: nativeBal.toFixed(4)}) });
     } else if (chainId === '0x1') {
       checks.push({ ok: true, text: t('audit_check_eth_ok') });
     }
 
-    if (chainId === '0x1' && lcaiBal !== '—' && lcaiBal !== 'Error' && parseFloat(lcaiBal.replace(/,/g,'')) > 0) {
+    if (chainId === '0x23f0') {
+      if (nativeBal > 0) {
+        checks.push({ ok: true, text: t('audit_check_lcai_native') || 'Native LCAI balance found — you can pay gas on Lightchain dApps.' });
+      } else {
+        checks.push({ ok: false, text: t('audit_check_lcai_native_low') || 'No native LCAI yet — bridge from Ethereum or buy on lightdex.app for gas.' });
+      }
+    }
+
+    if (chainId === '0x1' && lcaiLabel !== '—' && lcaiLabel !== 'Error' && parseFloat(String(lcaiLabel).replace(/,/g,'')) > 0) {
       checks.push({ ok: true, text: t('audit_check_lcai') });
     }
 
@@ -1372,7 +1385,7 @@ function _renderFlaggedTokens(tokens, withBorder) {
   return '<div style="display:grid;gap:8px;margin-top:10px">' +
     tokens.map(tok =>
       '<div style="background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.25);border-radius:8px;padding:12px 14px">' +
-      '<div style="font-weight:700;color:#ff8888;font-size:18px">⚠️ ' + (tok.name || '?') + ' (' + (tok.symbol || '?') + ')</div>' +
+      '<div style="font-weight:700;color:#ff8888;font-size:18px">⚠️ [' + (tok.chain || '?') + '] ' + (tok.name || '?') + ' (' + (tok.symbol || '?') + ')</div>' +
       '<div style="font-size:18px;color:var(--muted);margin-top:4px;font-family:monospace;word-break:break-all">' + tok.contract + '</div>' +
       '</div>'
     ).join('') +
@@ -1433,7 +1446,7 @@ async function switchAuditNetwork(hexChainId, name) {
             chainName: 'Lightchain Mainnet',
             nativeCurrency: { name: 'LCAI', symbol: 'LCAI', decimals: 18 },
             rpcUrls: ['https://rpc.mainnet.lightchain.ai'],
-            blockExplorerUrls: ['https://explorer.lightchain.ai']
+            blockExplorerUrls: ['https://mainnet.lightscan.app']
           }]
         });
         await connectWalletAudit();

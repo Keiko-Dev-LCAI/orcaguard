@@ -1113,13 +1113,50 @@ class Handler(BaseHTTPRequestHandler):
             if lcai_code is None:
                 lcai_line = "Lightchain: lookup unavailable"
             elif lcai_code in ("0x", "0x0", "") or len(lcai_code) <= 4:
-                lcai_line = "Lightchain: no contract code at this address"
+                lcai_line = "Lightchain: no contract code at this address (not a Lightchain smart contract / token)"
             else:
                 lcai_line = "Lightchain: contract code present at this address"
             lcai_tx_raw = _results.get("lcai_tx")
             lcai_tx_n   = int(lcai_tx_raw, 16) if lcai_tx_raw else 0
             if lcai_tx_n:
                 lcai_line += f", ~{lcai_tx_n:,} txs (nonce)"
+
+            # Lightscan token / verification extras (when this is a Lightchain contract)
+            ls_extra = "Lightscan token metadata: unavailable"
+            try:
+                ls_req = _ur.Request(
+                    f"https://mainnet.lightscan.app/api/v2/addresses/{_address}",
+                    headers={"User-Agent": "OrcaGuard/1.0", "Accept": "application/json"},
+                )
+                with _ur.urlopen(ls_req, timeout=10) as lsr:
+                    ls_addr = json.loads(lsr.read())
+                tok = ls_addr.get("token") or {}
+                if tok:
+                    ls_extra = (
+                        f"Lightscan token: name={tok.get('name') or '?'}, "
+                        f"symbol={tok.get('symbol') or '?'}, type={tok.get('type') or '?'}, "
+                        f"holders≈{tok.get('holders_count') or '?'}"
+                    )
+                elif ls_addr.get("is_contract"):
+                    ls_extra = f"Lightscan: is_contract=true, name={ls_addr.get('name') or 'unnamed'}"
+                else:
+                    ls_extra = "Lightscan: no ERC-20 token metadata at this address"
+                # Prefer verified source if present
+                try:
+                    sc_req = _ur.Request(
+                        f"https://mainnet.lightscan.app/api/v2/smart-contracts/{_address}",
+                        headers={"User-Agent": "OrcaGuard/1.0", "Accept": "application/json"},
+                    )
+                    with _ur.urlopen(sc_req, timeout=10) as scr:
+                        sc = json.loads(scr.read())
+                    if sc.get("source_code") or sc.get("is_verified"):
+                        ls_extra += "; Lightscan source: VERIFIED / published"
+                    elif sc.get("creation_status"):
+                        ls_extra += f"; Lightscan creation_status={sc.get('creation_status')}"
+                except Exception:
+                    pass
+            except Exception as e:
+                print(f"  [contract/lightscan] {e}")
 
             chain_context = (
                 f"{eth_type}\n"
@@ -1129,6 +1166,7 @@ class Handler(BaseHTTPRequestHandler):
                 f"Age: {age_str}\n"
                 f"{activity_line}\n"
                 f"{lcai_line}\n"
+                f"{ls_extra}\n"
                 f"Etherscan: {_es_link}\n"
                 f"Lightscan: {_ls_link}"
             )
@@ -1142,10 +1180,12 @@ Live chain data (use these facts; do not invent explorer stats):
 
 Rules for your verdict:
 - Prefer CAUTION or DANGER when data is missing, code is unverified, the address is brand-new, or it is only a plain wallet (EOA) being sold as a "token".
-- "Etherscan verified" is helpful but NOT a guarantee of safety (scams can verify).
-- If there is NO contract code on Ethereum, explain it is not a normal token contract — DANGER or CAUTION for "buying this token".
+- "Etherscan verified" / Lightscan verified is helpful but NOT a guarantee of safety (scams can verify).
+- If there is NO contract code on Ethereum AND NO contract code on Lightchain, explain it is not a normal token contract — DANGER or CAUTION for "buying this token".
+- If code exists ONLY on Lightchain Mainnet (9200), treat it as a Lightchain token/contract — cite Lightscan facts, not Ethereum-only assumptions.
+- Native LCAI on Lightchain has NO ERC-20 contract — anyone selling a "native LCAI contract" is a scam.
 - Never tell the user to share seed phrases or private keys.
-- Always give concrete next steps: e.g. compare contract on CoinMarketCap, use OrcaGuard URL check on the site they came from, start with tiny amount, check sellability, revoke approvals later.
+- Always give concrete next steps: e.g. compare contract on CoinMarketCap / Lightscan, use OrcaGuard URL check on the site they came from, start with tiny amount, check sellability, revoke approvals later.
 
 Structure:
 1. VERDICT: 🟢 SAFE / 🟡 CAUTION / 🔴 DANGER
@@ -1403,25 +1443,29 @@ Structure:
         ETH_RPC  = "https://eth.llamarpc.com"
         LCAI_RPC = "https://rpc.mainnet.lightchain.ai"
 
-        # Known DEX router contracts on Ethereum
+        # Known DEX router contracts — Ethereum + Lightchain
         DEX_ROUTERS = {
-            "0x7a250d5630b4cf539739df2c5dacb4c659f2488d": "Uniswap V2 Router",
-            "0xe592427a0aece92de3edee1f18e0157c05861564": "Uniswap V3 Router",
-            "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad": "Uniswap Universal Router",
-            "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": "Uniswap V3 Router 2",
-            "0x1111111254eeb25477b68fb85ed929f73a960582": "1inch V5",
-            "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V4",
-            "0xdef1c0ded9bec7f1a1670819833240f027b25eff": "0x Exchange Proxy",
-            "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f": "SushiSwap Router",
+            "0x7a250d5630b4cf539739df2c5dacb4c659f2488d": "Uniswap V2 Router (ETH)",
+            "0xe592427a0aece92de3edee1f18e0157c05861564": "Uniswap V3 Router (ETH)",
+            "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad": "Uniswap Universal Router (ETH)",
+            "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": "Uniswap V3 Router 2 (ETH)",
+            "0x1111111254eeb25477b68fb85ed929f73a960582": "1inch V5 (ETH)",
+            "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V4 (ETH)",
+            "0xdef1c0ded9bec7f1a1670819833240f027b25eff": "0x Exchange Proxy (ETH)",
+            "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f": "SushiSwap Router (ETH)",
             # ERC-4337 Account Abstraction EntryPoints — bots use these to submit automated UserOperations
             "0x0000000071727de22e5e9d8baf0edac6f37da032": "ERC-4337 EntryPoint v0.7 (AA Bot)",
             "0x5ff137d4b0fdcd49dcd4dc17ae2aa8f821b42f34": "ERC-4337 EntryPoint v0.6 (AA Bot)",
+            # Lightchain Mainnet (9200)
+            "0x1f94c0a6cf48d3075f9713a79f87fa4eedaf7021": "LCAI Swap / UniV2 Router (Lightchain)",
+            "0xba502917c3f7233f9100f9430f4048a224a7d8de": "LCAI Swap Factory (Lightchain)",
         }
 
         results = {
             "eth_code": None, "eth_tx": None,
             "lcai_code": None, "lcai_tx": None,
             "txlist": None, "tokentx": None,
+            "lc_txlist": None, "lc_tokentx": None,
         }
 
         def _fetch(key, rpc, method, params):
@@ -1456,7 +1500,50 @@ Structure:
                 print(f"  [Etherscan/{action}] exception: {e}")
                 results[key] = None
 
-        # Start all threads in parallel — RPC and both Etherscan fetches at the same time
+        def _lightscan_activity():
+            """Recent Lightchain txs + token transfers via Lightscan (Blockscout)."""
+            try:
+                base = "https://mainnet.lightscan.app/api/v2"
+                # Normal txs
+                req = _ur.Request(
+                    f"{base}/addresses/{address}/transactions",
+                    headers={"User-Agent": "OrcaGuard/1.0", "Accept": "application/json"},
+                )
+                with _ur.urlopen(req, timeout=12) as r:
+                    d = json.loads(r.read())
+                items = d.get("items") or []
+                # Normalize to Etherscan-like {to: ...} for DEX hit counting
+                results["lc_txlist"] = [
+                    {"to": ((it.get("to") or {}).get("hash") or it.get("to") or "")}
+                    for it in items[:50]
+                ]
+            except Exception as e:
+                print(f"  [bot/lc_tx] {e}")
+                results["lc_txlist"] = None
+            try:
+                base = "https://mainnet.lightscan.app/api/v2"
+                req = _ur.Request(
+                    f"{base}/addresses/{address}/token-transfers?type=ERC-20",
+                    headers={"User-Agent": "OrcaGuard/1.0", "Accept": "application/json"},
+                )
+                with _ur.urlopen(req, timeout=12) as r:
+                    d = json.loads(r.read())
+                items = d.get("items") or []
+                norm = []
+                for it in items[:50]:
+                    tok = it.get("token") or {}
+                    norm.append({
+                        "tokenSymbol": tok.get("symbol") or "?",
+                        "to": ((it.get("to") or {}).get("hash") or ""),
+                        "from": ((it.get("from") or {}).get("hash") or ""),
+                        "contractAddress": tok.get("address_hash") or tok.get("address") or "",
+                    })
+                results["lc_tokentx"] = norm
+            except Exception as e:
+                print(f"  [bot/lc_tok] {e}")
+                results["lc_tokentx"] = None
+
+        # Start all threads in parallel — RPC + Etherscan + Lightscan
         rpc_threads = [
             threading.Thread(target=_fetch, args=("eth_code",  ETH_RPC,  "eth_getCode",             [address, "latest"]), daemon=True),
             threading.Thread(target=_fetch, args=("eth_tx",    ETH_RPC,  "eth_getTransactionCount", [address, "latest"]), daemon=True),
@@ -1465,10 +1552,12 @@ Structure:
         ]
         es_txlist  = threading.Thread(target=_etherscan_fetch, args=("txlist",  "txlist"),  daemon=True)
         es_tokentx = threading.Thread(target=_etherscan_fetch, args=("tokentx", "tokentx"), daemon=True)
+        ls_act     = threading.Thread(target=_lightscan_activity, daemon=True)
 
         for t in rpc_threads: t.start()
         es_txlist.start()
         es_tokentx.start()
+        ls_act.start()
         # Wait only for fast RPC calls before responding to user
         for t in rpc_threads: t.join(timeout=8)
 
@@ -1482,16 +1571,18 @@ Structure:
         with _jobs_lock:
             _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "bot", "address": address}
 
-        # Send jobId immediately — Etherscan + AIVM run fully in background
+        # Send jobId immediately — explorers + AIVM run fully in background
         self._send_json({
             "ok": True, "jobId": job_id,
             "etherscanUrl": f"https://etherscan.io/address/{address}",
+            "lightscanUrl": f"https://mainnet.lightscan.app/address/{address}",
             "remaining":    remaining,
         })
 
         # Capture locals for background thread
         _es_txlist  = es_txlist
         _es_tokentx = es_tokentx
+        _ls_act     = ls_act
         _results    = results
         _eth_tx     = eth_tx
         _lcai_tx    = lcai_tx
@@ -1500,66 +1591,82 @@ Structure:
         _DEX        = DEX_ROUTERS
 
         def _run():
-            # Wait for both Etherscan fetches to finish
+            # Wait for explorer fetches
             _es_txlist.join(timeout=12)
             _es_tokentx.join(timeout=12)
+            _ls_act.join(timeout=14)
 
             txlist  = _results.get("txlist")  or []
             tokentx = _results.get("tokentx") or []
+            lc_txlist  = _results.get("lc_txlist") or []
+            lc_tokentx = _results.get("lc_tokentx") or []
 
-            # Analyze txlist: which DEX routers did this wallet call?
+            # DEX router hits — ETH + Lightchain
             dex_hits = {}
-            for tx in txlist:
+            for tx in list(txlist) + list(lc_txlist):
                 to = (tx.get("to") or "").lower()
                 if to in _DEX:
                     name = _DEX[to]
                     dex_hits[name] = dex_hits.get(name, 0) + 1
 
-            # Analyze tokentx: token transfer patterns (received vs sent per token)
-            token_summary = {}
-            for tx in tokentx:
-                symbol   = tx.get("tokenSymbol", "?")
-                is_in    = (tx.get("to", "").lower() == address.lower())
-                contract = tx.get("contractAddress", "").lower()
-                if contract not in token_summary:
-                    token_summary[contract] = {"symbol": symbol, "in": 0, "out": 0}
-                if is_in:
-                    token_summary[contract]["in"] += 1
-                else:
-                    token_summary[contract]["out"] += 1
+            def _token_summary(rows, label):
+                token_summary = {}
+                for tx in rows:
+                    symbol   = tx.get("tokenSymbol", "?")
+                    is_in    = (tx.get("to", "").lower() == address.lower())
+                    contract = (tx.get("contractAddress") or "").lower()
+                    if not contract:
+                        continue
+                    if contract not in token_summary:
+                        token_summary[contract] = {"symbol": symbol, "in": 0, "out": 0}
+                    if is_in:
+                        token_summary[contract]["in"] += 1
+                    else:
+                        token_summary[contract]["out"] += 1
+                if token_summary:
+                    top = sorted(token_summary.items(), key=lambda x: x[1]["in"] + x[1]["out"], reverse=True)[:5]
+                    return f"{label}: " + ", ".join(
+                        f"{v['symbol']} ({v['in']} in / {v['out']} out)" for _, v in top)
+                return None
 
-            # Build human-readable lines for the AI prompt
             if dex_hits:
-                dex_line = "DEX router calls in last {} normal txns: {}".format(
-                    len(txlist), ", ".join(f"{v}x {k}" for k, v in dex_hits.items()))
-            elif _results.get("txlist") is not None:
-                dex_line = f"Last {len(txlist)} normal transactions checked: zero DEX router calls detected"
+                dex_line = "DEX/router calls (ETH+Lightchain samples): " + ", ".join(
+                    f"{v}x {k}" for k, v in dex_hits.items())
+            elif _results.get("txlist") is not None or _results.get("lc_txlist") is not None:
+                dex_line = "Sampled recent txs on ETH/Lightchain: no known DEX router calls detected"
             else:
-                dex_line = "Etherscan normal transaction data unavailable"
+                dex_line = "DEX activity data unavailable"
 
-            if token_summary:
-                top = sorted(token_summary.items(), key=lambda x: x[1]["in"] + x[1]["out"], reverse=True)[:5]
-                token_line = "ERC-20 token activity (last 50 token txns): " + ", ".join(
-                    f"{v['symbol']} ({v['in']} received / {v['out']} sent)" for _, v in top)
-            elif _results.get("tokentx") is not None:
-                token_line = "No ERC-20 token transfers found"
-            else:
-                token_line = "Etherscan token transfer data unavailable"
+            eth_tok_line = _token_summary(tokentx, "Ethereum ERC-20 activity (sample)")
+            lc_tok_line  = _token_summary(lc_tokentx, "Lightchain ERC-20 activity (sample)")
+            if not eth_tok_line:
+                eth_tok_line = (
+                    "Ethereum ERC-20: none in sample"
+                    if _results.get("tokentx") is not None
+                    else "Ethereum ERC-20 data unavailable"
+                )
+            if not lc_tok_line:
+                lc_tok_line = (
+                    "Lightchain ERC-20: none in sample"
+                    if _results.get("lc_tokentx") is not None
+                    else "Lightchain ERC-20 data unavailable"
+                )
 
             chain_s = (
                 f"Ethereum: {'Smart contract' if _eth_c else 'Regular wallet'}, "
                 f"{_eth_tx:,} outbound transactions (nonce)\n"
-                f"Lightchain: {'Smart contract' if _lcai_c else 'Regular wallet'}, "
-                f"{_lcai_tx:,} outbound transactions\n"
+                f"Lightchain Mainnet (9200): {'Smart contract' if _lcai_c else 'Regular wallet'}, "
+                f"{_lcai_tx:,} outbound transactions (nonce)\n"
                 f"{dex_line}\n"
-                f"{token_line}"
+                f"{eth_tok_line}\n"
+                f"{lc_tok_line}"
             )
 
-            prompt = f"""Analyze this Ethereum wallet address and determine if it is a trading bot or a human trader.
+            prompt = f"""Analyze this EVM wallet on Ethereum and/or Lightchain Mainnet and determine if it is a trading bot or a human trader.
 
 Address: {address}
 
-On-chain data collected from Etherscan and RPC nodes:
+On-chain data collected from Etherscan, Lightscan, and RPC nodes:
 {chain_s}
 
 RULES you must follow:
@@ -1567,14 +1674,15 @@ RULES you must follow:
 2. Base your verdict only on the data shown above. Do not invent facts.
 3. If data is missing or unavailable, acknowledge it and lean toward UNCLEAR.
 4. Be decisive when the evidence is strong — do not hedge if the data clearly points one way.
+5. Lightchain activity (LCAI Swap router, Filament, token transfers) counts the same as Ethereum DEX activity for bot patterns.
 
 DEFINITIVE BOT signals — if any of these are present, verdict is BOT:
-- Address is a smart contract (deployed bytecode)
+- Address is a smart contract (deployed bytecode) on either chain
 - 3 or more transactions in the last 50 going to ERC-4337 EntryPoint contracts — humans do NOT manually submit UserOperations repeatedly; this is always automated
 - Nonce over 1000 with all activity concentrated on one or two routers
 
 LIKELY BOT signals:
-- Majority of transactions going to DEX routers (Uniswap, 1inch, SushiSwap, 0x) with no other activity
+- Majority of transactions going to DEX routers (Uniswap, 1inch, SushiSwap, 0x, LCAI Swap) with no other activity
 - High nonce (200+) with only swap/trade transactions
 
 Human signals:
@@ -1601,7 +1709,9 @@ What to watch for: [one practical note for someone interacting with this address
 
 
     def _handle_scan_airdrops(self):
-        import urllib.request as _ur, urllib.parse as _up
+        """Scan ERC-20 tokens received/held on Ethereum + Lightchain Mainnet."""
+        import urllib.request as _ur
+        import urllib.parse as _up
 
         body    = self._read_body()
         address = body.get("address", "").strip()
@@ -1613,8 +1723,9 @@ What to watch for: [one practical note for someone interacting with this address
             return
 
         ip = _get_client_ip(self)
+        addr_l = address.lower()
 
-        # ── Scam name patterns ────────────────────────────────────────────
+        # Name/symbol patterns common on scam airdrops
         SCAM_NAME_PATTERNS = [
             r'claim', r'reward', r'airdrop', r'bonus', r'free',
             r'prize', r'win', r'gift', r'voucher', r'cashback',
@@ -1622,13 +1733,41 @@ What to watch for: [one practical note for someone interacting with this address
             r'visit.*to', r'go to', r'www\.', r'\.com', r'\.io', r'\.net',
             r'\$\d+', r'usd', r'usdt', r'earn',
         ]
+        # Never flag known-good Lightchain / ETH contracts as scam airdrops
+        KNOWN_OK = set(VERIFIED_CONTRACTS.keys())
 
         def _name_looks_suspicious(name, symbol):
             combined = (name + ' ' + symbol).lower()
             return any(re.search(p, combined) for p in SCAM_NAME_PATTERNS)
 
-        # ── Fetch token transfers from Etherscan (free, no key needed) ────
-        eth_tokens = []
+        def _add_token(bucket, seen, contract, name, symbol, chain):
+            c = (contract or "").lower()
+            if not c or not c.startswith("0x") or len(c) != 42:
+                return
+            key = f"{chain}:{c}"
+            if key in seen:
+                return
+            seen.add(key)
+            known = c in KNOWN_OK
+            suspicious = (not known) and _name_looks_suspicious(name or "", symbol or "")
+            entry = {
+                "contract":   c,
+                "name":       name or "Unknown",
+                "symbol":     symbol or "?",
+                "chain":      chain,
+                "suspicious": suspicious,
+                "knownSafe":  known,
+            }
+            if known and c in VERIFIED_CONTRACTS:
+                entry["knownName"] = VERIFIED_CONTRACTS[c]["name"]
+            bucket.append(entry)
+
+        all_tokens = []
+        seen = set()
+        eth_err = None
+        lc_err = None
+
+        # ── Ethereum: tokens received (Etherscan) ─────────────────────────
         try:
             url = (
                 "https://api.etherscan.io/v2/api"
@@ -1639,89 +1778,176 @@ What to watch for: [one practical note for someone interacting with this address
                 "&sort=desc&offset=200&page=1"
             )
             req = _ur.Request(url, headers={"User-Agent": "OrcaGuard/1.0"})
-            with _ur.urlopen(req, timeout=12) as r:
+            with _ur.urlopen(req, timeout=14) as r:
                 data = json.loads(r.read())
             if data.get("status") == "1":
-                seen = {}
-                for tx in data.get("result", []):
-                    to_addr = tx.get("to", "").lower()
-                    contract = tx.get("contractAddress", "").lower()
-                    name     = tx.get("tokenName", "")
-                    symbol   = tx.get("tokenSymbol", "")
-                    # Only tokens RECEIVED (not sent by the user)
-                    if to_addr == address.lower() and contract not in seen:
-                        seen[contract] = True
-                        suspicious = _name_looks_suspicious(name, symbol)
-                        eth_tokens.append({
-                            "contract": contract,
-                            "name":     name,
-                            "symbol":   symbol,
-                            "chain":    "Ethereum",
-                            "suspicious": suspicious,
-                        })
+                for tx in data.get("result", []) or []:
+                    to_addr = (tx.get("to") or "").lower()
+                    if to_addr != addr_l:
+                        continue
+                    _add_token(
+                        all_tokens, seen,
+                        tx.get("contractAddress", ""),
+                        tx.get("tokenName", ""),
+                        tx.get("tokenSymbol", ""),
+                        "Ethereum",
+                    )
+            elif "No transactions" not in str(data.get("message", "")) and data.get("status") != "0":
+                eth_err = data.get("message") or "etherscan error"
         except Exception as e:
-            pass  # Etherscan unavailable — return what we have
+            eth_err = str(e)
+            print(f"  [airdrop/eth] {e}")
 
-        # ── Quick result: flag obviously named scams without burning AI ───
-        flagged  = [t for t in eth_tokens if t["suspicious"]]
-        clean    = [t for t in eth_tokens if not t["suspicious"]]
+        # ── Lightchain: tokens held + received (Lightscan / Blockscout) ───
+        LIGHTSCAN = "https://mainnet.lightscan.app/api/v2"
 
-        # If nothing suspicious by name, return immediately (no AI cost)
+        def _ls_get(path_qs):
+            req = _ur.Request(
+                f"{LIGHTSCAN}/{path_qs.lstrip('/')}",
+                headers={"User-Agent": "OrcaGuard/1.0", "Accept": "application/json"},
+            )
+            with _ur.urlopen(req, timeout=14) as r:
+                return json.loads(r.read())
+
+        try:
+            # Current ERC-20 balances (covers airdrops still sitting in the wallet)
+            path = f"addresses/{address}/tokens?type=ERC-20"
+            pages = 0
+            while path and pages < 8:
+                d = _ls_get(path)
+                for item in d.get("items") or []:
+                    tok = item.get("token") or {}
+                    _add_token(
+                        all_tokens, seen,
+                        tok.get("address_hash") or tok.get("address") or "",
+                        tok.get("name", ""),
+                        tok.get("symbol", ""),
+                        "Lightchain",
+                    )
+                npp = d.get("next_page_params")
+                if not npp:
+                    break
+                qs = _up.urlencode({k: v for k, v in npp.items() if v is not None})
+                path = f"addresses/{address}/tokens?type=ERC-20&{qs}"
+                pages += 1
+                time.sleep(0.05)
+
+            # Token transfers where this wallet is the recipient
+            path = f"addresses/{address}/token-transfers?type=ERC-20"
+            pages = 0
+            while path and pages < 10:
+                d = _ls_get(path)
+                for item in d.get("items") or []:
+                    to_h = ((item.get("to") or {}).get("hash") or "").lower()
+                    if to_h != addr_l:
+                        continue
+                    tok = item.get("token") or {}
+                    _add_token(
+                        all_tokens, seen,
+                        tok.get("address_hash") or tok.get("address") or "",
+                        tok.get("name", ""),
+                        tok.get("symbol", ""),
+                        "Lightchain",
+                    )
+                npp = d.get("next_page_params")
+                if not npp:
+                    break
+                qs = _up.urlencode({k: v for k, v in npp.items() if v is not None})
+                path = f"addresses/{address}/token-transfers?type=ERC-20&{qs}"
+                pages += 1
+                time.sleep(0.05)
+        except Exception as e:
+            lc_err = str(e)
+            print(f"  [airdrop/lc] {e}")
+
+        eth_n = sum(1 for t in all_tokens if t["chain"] == "Ethereum")
+        lc_n  = sum(1 for t in all_tokens if t["chain"] == "Lightchain")
+        known_n = sum(1 for t in all_tokens if t.get("knownSafe"))
+        flagged = [t for t in all_tokens if t["suspicious"]]
+        clean   = [t for t in all_tokens if not t["suspicious"]]
+
+        def _summary_msg(flag_mode=False):
+            parts = [
+                f"Scanned {len(all_tokens)} unique ERC-20 token(s): "
+                f"{eth_n} on Ethereum, {lc_n} on Lightchain Mainnet."
+            ]
+            if known_n:
+                parts.append(
+                    f"{known_n} match known Lightchain/community contracts (e.g. KEIKO, WLCAI, official routers) — not treated as scam airdrops."
+                )
+            if eth_err and not eth_n:
+                parts.append(f"Ethereum scan issue: {eth_err}.")
+            if lc_err and not lc_n:
+                parts.append(f"Lightchain scan issue: {lc_err}.")
+            if not all_tokens:
+                parts.append(
+                    "No ERC-20 tokens found on either chain for this address "
+                    "(native LCAI is not an ERC-20 and will not appear here)."
+                )
+            elif not flagged:
+                parts.append(
+                    "None match common airdrop-scam name patterns. "
+                    "Still: never approve or visit links from random tokens you did not buy."
+                )
+            elif flag_mode:
+                parts.append(f"Flagged {len(flagged)} by name pattern for closer review.")
+            return " ".join(parts)
+
+        # Clean / nothing suspicious → no AIVM cost
         if not flagged:
             self._send_json({
                 "ok": True,
                 "flagged": [],
                 "clean": len(clean),
-                "total": len(eth_tokens),
+                "total": len(all_tokens),
+                "ethCount": eth_n,
+                "lightchainCount": lc_n,
+                "knownSafeCount": known_n,
+                "tokens": all_tokens[:40],
                 "aiUsed": False,
-                "message": (
-                    f"Scanned {len(eth_tokens)} tokens your wallet received on Ethereum. "
-                    "None of them have names that match common airdrop scam patterns. "
-                    "That's a good sign — but always be cautious about interacting with tokens you didn't buy."
-                    if eth_tokens else
-                    "No ERC-20 token transfers found for this address on Ethereum."
-                )
+                "message": _summary_msg(False),
             })
             return
 
-        # ── For suspicious tokens: check rate limit then run AI ──────────
         allowed, remaining = _check_ai_limit(ip)
         if not allowed:
-            # Return pattern-flagged results without AI explanation
             self._send_json({
                 "ok": True,
                 "flagged": flagged[:10],
                 "clean": len(clean),
-                "total": len(eth_tokens),
+                "total": len(all_tokens),
+                "ethCount": eth_n,
+                "lightchainCount": lc_n,
                 "aiUsed": False,
                 "limitReached": True,
                 "message": (
-                    f"Found {len(flagged)} suspicious token(s) by name pattern. "
-                    f"AI daily limit reached — showing name-based flags only. Come back tomorrow for AI verdicts."
-                )
+                    f"Found {len(flagged)} suspicious token(s) by name. "
+                    f"AI daily limit reached — showing name-based flags only. "
+                    + _summary_msg(True)
+                ),
             })
             return
 
-        # Build AI prompt for the flagged tokens (cap at 8 to keep prompt short)
         to_analyze = flagged[:8]
         token_list = "\n".join(
-            f"- {t['name']} ({t['symbol']}) — contract: {t['contract']}"
+            f"- [{t['chain']}] {t['name']} ({t['symbol']}) — {t['contract']}"
             for t in to_analyze
         )
-        prompt = f"""A crypto wallet has received the following ERC-20 tokens it likely never bought — they were airdropped in.
-Analyze each one and say whether it is likely a SCAM AIRDROP or POSSIBLY LEGITIMATE.
+        prompt = f"""A crypto wallet received these ERC-20 tokens (possible airdrops) on Ethereum and/or Lightchain Mainnet.
+Analyze each and say whether it is likely a SCAM AIRDROP or POSSIBLY LEGITIMATE.
 
 Wallet: {address}
-Tokens received:
+Tokens:
 {token_list}
 
-For each token, give:
-TOKEN: [name/symbol]
-VERDICT: SCAM AIRDROP or POSSIBLY LEGITIMATE
-REASON: [1 sentence — what's suspicious or why it might be okay]
+Known-good Lightchain community tokens (do NOT call these scams if listed: KEIKO, WLCAI, official LCAI Swap / Filament infra) are already filtered out when possible.
 
-After the list, add a SUMMARY section:
-SUMMARY: [2-3 sentences total — overall danger level, and one key warning about what these scam tokens try to get you to do (e.g. visit a website, connect wallet, approve a contract)]"""
+For each token:
+TOKEN: [chain] [name/symbol]
+VERDICT: SCAM AIRDROP or POSSIBLY LEGITIMATE
+REASON: [1 sentence]
+
+SUMMARY: [2-3 sentences — danger level + warn not to visit websites in token names or approve unknown contracts]"""
 
         import uuid
         job_id = str(uuid.uuid4())[:12]
@@ -1729,7 +1955,8 @@ SUMMARY: [2-3 sentences total — overall danger level, and one key warning abou
             _jobs[job_id] = {
                 "status": "pending", "ts": time.time(),
                 "type": "airdrop_scan",
-                "flagged": flagged, "clean": len(clean), "total": len(eth_tokens),
+                "flagged": flagged, "clean": len(clean), "total": len(all_tokens),
+                "ethCount": eth_n, "lightchainCount": lc_n,
             }
 
         def _run():
@@ -1742,7 +1969,10 @@ SUMMARY: [2-3 sentences total — overall danger level, and one key warning abou
                         "type": "airdrop_scan",
                         "flagged": flagged[:10],
                         "clean": len(clean),
-                        "total": len(eth_tokens),
+                        "total": len(all_tokens),
+                        "ethCount": eth_n,
+                        "lightchainCount": lc_n,
+                        "message": _summary_msg(True),
                     }
             except Exception as e:
                 with _jobs_lock:
@@ -1753,7 +1983,9 @@ SUMMARY: [2-3 sentences total — overall danger level, and one key warning abou
             "ok": True,
             "jobId": job_id,
             "flaggedCount": len(flagged),
-            "total": len(eth_tokens),
+            "total": len(all_tokens),
+            "ethCount": eth_n,
+            "lightchainCount": lc_n,
             "remaining": remaining,
         })
 
