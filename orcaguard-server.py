@@ -1740,16 +1740,31 @@ What to watch for: [one practical note for someone interacting with this address
             combined = (name + ' ' + symbol).lower()
             return any(re.search(p, combined) for p in SCAM_NAME_PATTERNS)
 
-        def _add_token(bucket, seen, contract, name, symbol, chain):
+        def _add_token(bucket, seen, contract, name, symbol, chain, balance_raw=None, decimals=None):
             c = (contract or "").lower()
             if not c or not c.startswith("0x") or len(c) != 42:
                 return
             key = f"{chain}:{c}"
-            if key in seen:
+            # Prefer entry that already has a balance if we see the token again
+            existing = None
+            for e in bucket:
+                if f"{e.get('chain')}:{e.get('contract')}" == key:
+                    existing = e
+                    break
+            if existing and not balance_raw:
+                return
+            if key in seen and not balance_raw:
                 return
             seen.add(key)
             known = c in KNOWN_OK
             suspicious = (not known) and _name_looks_suspicious(name or "", symbol or "")
+            bal_fmt = None
+            try:
+                if balance_raw is not None and str(balance_raw).isdigit():
+                    dec = int(decimals) if decimals is not None and str(decimals).isdigit() else 18
+                    bal_fmt = int(balance_raw) / (10 ** dec)
+            except Exception:
+                bal_fmt = None
             entry = {
                 "contract":   c,
                 "name":       name or "Unknown",
@@ -1758,9 +1773,15 @@ What to watch for: [one practical note for someone interacting with this address
                 "suspicious": suspicious,
                 "knownSafe":  known,
             }
+            if bal_fmt is not None:
+                entry["balance"] = bal_fmt
+                entry["balanceRaw"] = str(balance_raw)
             if known and c in VERIFIED_CONTRACTS:
                 entry["knownName"] = VERIFIED_CONTRACTS[c]["name"]
-            bucket.append(entry)
+            if existing:
+                existing.update(entry)
+            else:
+                bucket.append(entry)
 
         all_tokens = []
         seen = set()
@@ -1823,6 +1844,8 @@ What to watch for: [one practical note for someone interacting with this address
                         tok.get("name", ""),
                         tok.get("symbol", ""),
                         "Lightchain",
+                        balance_raw=item.get("value"),
+                        decimals=tok.get("decimals"),
                     )
                 npp = d.get("next_page_params")
                 if not npp:
