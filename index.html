@@ -1199,7 +1199,7 @@ async function connectViaWalletConnect() {
     _wcProv = await window.WCEthereumProvider.init({
       projectId: '3c6a0da53258912a28923198ddac3333',
       chains: [1], optionalChains: [9200], showQrModal: true,
-      metadata: { name: 'OrcaGuard', description: 'Wallet & Contract Security Checker', url: 'http://localhost:8186', icons: [] },
+      metadata: { name: 'OrcaGuard', description: 'Wallet & Contract Security Checker', url: 'https://orcaguard.win', icons: ['https://orcaguard.win/orca-mascot.png'] },
       rpcMap: { 9200: 'https://rpc.mainnet.lightchain.ai' }
     });
     await _wcProv.enable();
