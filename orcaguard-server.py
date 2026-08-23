@@ -721,13 +721,26 @@ def quick_url_check(url: str) -> dict:
     return {"verdict": "unknown", "known": False}
 
 # ════════════════════════════════════════════════════════════════════════
-# AI RATE LIMITER — 5 AIVM calls per IP per day
+# AI RATE LIMITER — AI_DAILY_LIMIT AIVM calls per IP per day
 # ════════════════════════════════════════════════════════════════════════
 
 # Free safety checks per IP per day (contract / URL / bot / ask share this budget)
 AI_DAILY_LIMIT = 12
 _ip_usage      = {}   # { ip: {"count": N, "date": "YYYY-MM-DD"} }
 _ip_lock       = threading.Lock()
+
+# Scoped CORS (open-endpoints polish 2026-08-22)
+_CORS_ORIGINS = [o.strip() for o in os.environ.get(
+    "CORS_ORIGINS",
+    "https://orcaguard.win,http://localhost:8186,http://127.0.0.1:8186"
+).split(",") if o.strip()]
+
+
+def _cors_for(handler) -> str:
+    origin = (handler.headers.get("Origin") or "").strip()
+    if origin in _CORS_ORIGINS:
+        return origin
+    return _CORS_ORIGINS[0] if _CORS_ORIGINS else "https://orcaguard.win"
 
 def _get_client_ip(handler) -> str:
     """Get real IP, respecting Railway's X-Forwarded-For proxy header."""
@@ -777,7 +790,8 @@ class Handler(BaseHTTPRequestHandler):
         body = json.dumps(obj).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_for(self))
+        self.send_header("Vary", "Origin")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -796,9 +810,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_for(self))
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Vary", "Origin")
         self.end_headers()
 
     def do_GET(self):
