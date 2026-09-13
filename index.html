@@ -349,6 +349,21 @@
           <div style="font-size:18px;color:var(--text);line-height:1.5">🌱 <strong style="color:#fff">New to crypto?</strong> &rarr; <span style="color:var(--cyan);cursor:pointer" onclick="showPage('scams')">Common Scams</span></div>
         </div>
       </div>
+
+      <div class="info-card" style="border-color:rgba(201,162,39,0.35);background:rgba(201,162,39,0.06);padding:14px 20px;margin-top:14px">
+        <div class="info-card-title" style="font-size:20px;margin-bottom:6px">💜 Tip / Support in KEIKO</div>
+        <div style="font-size:16px;color:var(--muted);margin-bottom:12px;line-height:1.5">OrcaGuard is free. Optional KEIKO tips help keep it running — no unlock, no paywall.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button type="button" class="check-btn" style="padding:8px 14px;font-size:15px" onclick="sendGuardKeikoTip(5000)">5,000</button>
+          <button type="button" class="check-btn" style="padding:8px 14px;font-size:15px" onclick="sendGuardKeikoTip(25000)">25,000</button>
+          <button type="button" class="check-btn" style="padding:8px 14px;font-size:15px" onclick="sendGuardKeikoTip(100000)">100,000</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input class="check-input" id="guard-keiko-tip-amount" type="number" min="1" step="1" value="10000" placeholder="Custom KEIKO" style="max-width:160px">
+          <button type="button" class="check-btn" style="padding:8px 14px;font-size:15px" onclick="sendGuardCustomKeikoTip()">Send KEIKO</button>
+        </div>
+        <div id="guard-keiko-tip-status" style="font-size:15px;color:var(--muted);margin-top:10px;min-height:18px"></div>
+      </div>
     </div>
 
     <!-- CONTRACT CHECK -->
@@ -858,10 +873,13 @@ I'll give you a straight answer in plain English. 🛡️</div>
 </div>
 
 <script src="i18n-ui.js?v=20260804-1518"></script>
+<script src="keiko-pay.js"></script>
 <script>
 const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:8186'
   : 'https://orcaguard-production.up.railway.app';
+// Same public tip address as OrcaAppBuilder (LCAI tips) — KEIKO tips go here too.
+const GUARD_KEIKO_TIP_ADDRESS = '0x6518fD26a7aD2Fe1bA80De5f279Ee59F55C0A9bA';
 
 // ── Navigation ─────────────────────────────────────────────────────────
 function showPage(id) {
@@ -1714,6 +1732,49 @@ showPage('home');
 <!-- dev contact footer -->
 <div style="text-align:center;padding:8px 16px 16px;font-size:18px;opacity:0.5;"><span id="footerContact">Questions or ideas? </span><a href="#" onclick="(function(){navigator.clipboard.writeText('0xA3a653a8cBA0710ff57Ac34E2278C603B4259FD3').catch(function(){});window.open('https://orcamail.ai','_blank');var t=document.getElementById('_dctoast');if(t){t.style.display='block';setTimeout(function(){t.style.display='none'},3000);}})();return false;" style="color:#6c47ff;font-weight:600;text-decoration:none;"><span id="footerContactLink">Contact Developer via OrcaMail &#x1F42C;</span></a></div>
 <div id="_dctoast" style="display:none;position:fixed;bottom:24px;right:24px;background:#6c47ff;color:#fff;padding:10px 18px;border-radius:8px;font-size:18px;z-index:9999;box-shadow:0 2px 16px rgba(0,0,0,.4);"><span id="toastCopiedText">Wallet copied! Opening OrcaMail&#x2026;</span></div>
-<script>applyI18n();</script>
+<script>
+async function sendGuardKeikoTip(amount) {
+  await doSendGuardKeikoTip(Number(amount));
+}
+async function sendGuardCustomKeikoTip() {
+  const val = (document.getElementById('guard-keiko-tip-amount').value || '').trim();
+  const n = Number(val);
+  if (!val || !Number.isFinite(n) || n <= 0) {
+    const s = document.getElementById('guard-keiko-tip-status');
+    if (s) s.textContent = 'Enter a valid KEIKO amount.';
+    return;
+  }
+  await doSendGuardKeikoTip(n);
+}
+async function doSendGuardKeikoTip(amount) {
+  const status = document.getElementById('guard-keiko-tip-status');
+  if (status) { status.style.color = 'var(--muted)'; status.textContent = ''; }
+  if (typeof KeikoPay === 'undefined') {
+    if (status) status.textContent = 'KEIKO pay helper not loaded.';
+    return;
+  }
+  try {
+    if (status) status.textContent = 'Confirm KEIKO transfer in your wallet…';
+    const r = await KeikoPay.pay({
+      to: GUARD_KEIKO_TIP_ADDRESS,
+      amount: amount,
+      // tip-only — no backend verify
+    });
+    if (!r.ok) throw new Error(r.error || 'KEIKO tip failed');
+    const txUrl = 'https://mainnet.lightscan.app/tx/' + r.txHash;
+    if (status) {
+      status.innerHTML = '🎉 Thank you! ' + amount + ' KEIKO sent — <a href="' + txUrl + '" target="_blank" rel="noopener" style="color:var(--cyan)">view tx</a>';
+      status.style.color = '#7dffb3';
+    }
+  } catch (e) {
+    const msg = (e && (e.shortMessage || e.message)) || String(e);
+    if (status) {
+      if (/reject|denied|4001/i.test(msg)) status.textContent = 'Tip cancelled.';
+      else { status.textContent = 'KEIKO tip failed: ' + msg; status.style.color = '#ff8888'; }
+    }
+  }
+}
+applyI18n();
+</script>
 </body>
 </html>
