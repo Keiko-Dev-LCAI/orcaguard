@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 NOTES-FOR-CLAUDE-KEIKO-DISPLAY.md
 GROK-FIX-*.md
+
+.grok/

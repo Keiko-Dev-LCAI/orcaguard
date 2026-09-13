@@ -8,6 +8,7 @@
 <title>OrcaGuard — Crypto Safety Assistant</title>
 <style>
   :root {
+  --on-accent: #0a0f1e;
     --bg: #0a0f1a;
     --surface: #0f1828;
     --border: rgba(255,255,255,0.08);
@@ -24,7 +25,7 @@
   /* ── SIDEBAR LOGO ───────────────────────────────────────────────────── */
   .sidebar-logo { padding: 18px 22px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
   .sidebar-logo:hover { background: rgba(255,255,255,0.04); }
-  .sidebar-logo-img-wrap { width: 56px; height: 56px; border-radius: 14px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 16px rgba(0,212,255,0.3); background: #8dcbd4; margin-bottom: 8px; }
+  .sidebar-logo-img-wrap { width: 56px; height: 56px; border-radius: 14px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow:none; background: #8dcbd4; margin-bottom: 8px; }
   .sidebar-logo-img { width: 56px; height: 56px; object-fit: cover; border-radius: 14px; }
   .sidebar-logo-name { font-size: 28px; font-weight: 800; color: var(--cyan); letter-spacing: -0.3px; margin-bottom: 6px; line-height: 1.1; }
   .header-badge { background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); font-size: 17px; font-weight: 600; padding: 5px 12px; border-radius: 20px; display: inline-block; }
@@ -34,9 +35,9 @@
   .sidebar-nav { flex: 1; min-height: 0; overflow-y: auto; }
   .sidebar-label { font-size: 18px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 24px 6px; margin-top: 10px; }
   .sidebar-label:first-of-type { margin-top: 12px; }
-  .nav-item { display: flex; align-items: center; gap: 14px; padding: 13px 24px; cursor: pointer; font-size: 24px; color: var(--muted); border-left: 3px solid transparent; transition: all 0.15s; line-height: 1.2; }
+  .nav-item { display: flex; align-items: center; gap: 14px; padding: 13px 24px; cursor: pointer; font-size: 24px; color: var(--muted); border-left: 0 solid transparent; transition: all 0.15s; line-height: 1.2; }
   .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
-  .nav-item.active { background: rgba(0,212,255,0.08); color: var(--cyan); border-left-color: var(--cyan); }
+  .nav-item.active { background: rgba(0,212,255,0.08); color: var(--cyan);  }
   .nav-icon { font-size: 26px; width: 32px; text-align: center; flex-shrink: 0; }
 
 
