@@ -834,6 +834,23 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_error("index.html not found", 404)
             return
 
+        # Get LCAI on-ramp widget assets (/getlcai/*.js)
+        if path.startswith("/getlcai/") and path.endswith(".js"):
+            js_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "getlcai", os.path.basename(path))
+            if os.path.isfile(js_path):
+                with open(js_path, "rb") as f:
+                    body = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "public, max-age=86400")
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            self._send_error("Not found", 404)
+            return
+
         # Serve static assets (icon, favicon, etc.) from the same directory
         STATIC_TYPES = {
             ".png": "image/png", ".ico": "image/x-icon",
