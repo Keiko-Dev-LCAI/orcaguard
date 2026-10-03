@@ -108,6 +108,7 @@ window.ORCAGUARD_I18N = {
     home_start_title: "🧭 Not sure where to start?",
     home_sub: "Your crypto safety companion for the Lightchain AI (LCAI) community. Before you buy a token, connect to a site, or send funds anywhere — run it through here first. It takes seconds and could save you everything.",
     home_title: "🛡️ Welcome to OrcaGuard",
+    lang_sub: "Change the whole app — navigation, guides, and buttons.",
     lang_title: "Language",
     mnav_ask: "Ask AI",
     mnav_audit: "Audit",
