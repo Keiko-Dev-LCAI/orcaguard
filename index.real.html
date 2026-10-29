@@ -287,6 +287,16 @@
       <div class="page-title" id="homeTitle">🛡️ Welcome to OrcaGuard</div>
       <div class="page-sub" id="homeSub">Your crypto safety companion for the Lightchain AI (LCAI) community. Before you buy a token, connect to a site, or send funds anywhere — run it through here first. It takes seconds and could save you everything.</div>
 
+      <div class="check-box" style="margin-bottom:18px;border-color:rgba(0,212,255,0.3)">
+        <div class="check-label" id="quickCheckLabel">⚡ Quick check — paste anything</div>
+        <div class="input-row">
+          <input class="check-input" id="quickCheckInput" onkeydown="quickCheckKey(event)" placeholder="Paste a token address, a website, or describe the situation…" />
+          <button class="check-btn" id="quickCheckBtn" onclick="quickCheck()">Check</button>
+        </div>
+        <div style="font-size:16px;color:var(--muted);margin-top:8px" id="quickCheckHint">A 0x address goes to the Contract Checker, a website to the Website Checker, anything else to Ask OrcaGuard.</div>
+        <button type="button" id="pwaInstallBtn" onclick="pwaInstall()" class="check-btn" style="display:none;margin-top:12px;padding:8px 14px;font-size:15px">📲 Install OrcaGuard</button>
+      </div>
+
       <p class="home-intro" id="homeIntro">OrcaGuard puts eight safety tools in one place. From checking unknown contracts and phishing URLs, to auditing your own wallet and learning how scams work — everything is explained in plain English, no technical background needed.</p>
 
       <div class="section-cards">
@@ -435,7 +445,13 @@
           <div style="font-size:18px;color:var(--green)">✅ <a href="https://filament.exchange" target="_blank" rel="noopener" style="color:var(--green)">filament.exchange</a> — Filament (community DEX/forge)</div>
           <div style="font-size:18px;color:var(--green)">✅ <a href="https://orcaguard.win" target="_blank" rel="noopener" style="color:var(--green)">orcaguard.win</a> — This app</div>
           <div style="font-size:18px;color:var(--green)">✅ <a href="https://orcamint.xyz" target="_blank" rel="noopener" style="color:var(--green)">orcamint.xyz</a> — OrcaMint</div>
-        </div></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="check-btn" style="padding:8px 14px;font-size:15px" onclick="copySafeLinks()">📋 Copy safe-links pack</button>
+          <span style="font-size:15px;color:var(--muted)">Save these in your bookmarks and only reach the sites from there.</span>
+        </div>
+        <div id="safeLinksStatus" style="font-size:15px;color:var(--green);margin-top:8px;min-height:18px"></div>
+        </div>
       </div>
     </div>
 
@@ -466,7 +482,8 @@
 
       <div class="info-card">
         <div class="info-card-title" id="walletInfoTitle">💡 Always verify before you send</div>
-        <div id="walletInfoBody"><p>Malware on your computer can silently replace wallet addresses you copy from the clipboard. You copy one address, paste a different one. Always check the first 6 and last 6 characters of the address in your wallet app before confirming.</p>
+        <div id="walletInfoBody"><p><strong style="color:#fff">Clipboard-swap malware:</strong> malware on your computer can silently replace a wallet address you copy. You copy one address, paste a different one. Always check the first 6 <em>and</em> last 6 characters of the address in your wallet app before confirming — never just the start.</p>
+        <p style="margin-top:8px"><strong style="color:#fff">Address poisoning:</strong> scammers send you tiny/zero transactions from an address that looks almost identical to one you've used, hoping you copy it from your history later. Never copy a destination from your transaction history — paste it from the real source every time.</p>
         <p style="margin-top:8px">On large amounts, send a small test transaction first and confirm it arrived before sending the rest.</p></div>
       </div>
 
@@ -797,6 +814,30 @@
             <p style="font-size:18px;color:#bb9955;line-height:1.7;margin:0">These give a smart contract permission to spend your tokens. Legitimate DeFi apps (like Uniswap) need a one-time approval before a swap — that's normal. But always set the approval amount to just what you need for that transaction, not unlimited. After the trade, that approval stays active forever unless you revoke it.</p>
           </div>
         </div>
+
+        <details class="info-card" style="margin-top:18px">
+          <summary style="cursor:pointer;font-size:20px;font-weight:700;color:var(--text);list-style:none">📖 Plain-English glossary <span style="color:var(--muted);font-size:15px;font-weight:400">(tap to open)</span></summary>
+          <div style="display:grid;gap:10px;margin-top:14px;font-size:17px;line-height:1.6;color:var(--text)">
+            <div><strong style="color:#fff">Gas</strong> — the network fee you pay to make a transaction. On Lightchain you pay it in native LCAI; on Ethereum in ETH.</div>
+            <div><strong style="color:#fff">Slippage</strong> — how much the price is allowed to move between the moment you confirm a swap and when it lands. Too high and a bot can sandwich you.</div>
+            <div><strong style="color:#fff">Approval / allowance</strong> — permission you give a contract to spend a token. Set it to the amount you need, not unlimited, and revoke old ones.</div>
+            <div><strong style="color:#fff">Seed phrase</strong> — the 12–24 words that control your whole wallet. Anyone who has them owns your funds. No real support team ever asks for it.</div>
+            <div><strong style="color:#fff">Bridge</strong> — a tool that moves a token from one chain to another (e.g. ERC-20 LCAI on Ethereum → native LCAI on Lightchain). Only ever use the official one.</div>
+            <div><strong style="color:#fff">Native vs ERC-20 LCAI</strong> — native LCAI is the gas coin on Lightchain and has <em>no</em> contract address; ERC-20 LCAI lives on Ethereum. Anyone selling a "native LCAI contract" is scamming.</div>
+            <div><strong style="color:#fff">Phishing / lookalike site</strong> — a fake copy of a real site on a near-identical domain. Connecting your wallet there can drain it. Always reach official sites from a bookmark.</div>
+            <div><strong style="color:#fff">Address poisoning</strong> — a scam that plants a lookalike address in your history so you copy the wrong one later. Paste destinations from the real source, never from history.</div>
+          </div>
+        </details>
+
+        <details class="info-card" style="margin-top:14px">
+          <summary style="cursor:pointer;font-size:20px;font-weight:700;color:var(--text);list-style:none">🧭 Safe steps for the riskiest actions <span style="color:var(--muted);font-size:15px;font-weight:400">(tap to open)</span></summary>
+          <div style="display:grid;gap:12px;margin-top:14px;font-size:17px;line-height:1.6;color:var(--text)">
+            <div><strong style="color:#fff">Connecting a wallet:</strong> 1) Reach the site from your own bookmark. 2) Check the full domain in the address bar. 3) Run it through the Website Checker here. 4) Only then connect.</div>
+            <div><strong style="color:#fff">Signing an approval:</strong> 1) Read what the prompt is approving. 2) Reject anything that says unlimited or setApprovalForAll unless you fully trust it. 3) Cap the amount. 4) Revoke later at revoke.cash.</div>
+            <div><strong style="color:#fff">Bridging LCAI:</strong> 1) Confirm you hold the official ERC-20 contract. 2) Open only bridge.lightchain.ai from a bookmark. 3) Send a small test first. 4) Confirm native LCAI arrived before doing the rest.</div>
+            <div><strong style="color:#fff">Spotting fake support:</strong> real teams never DM first, never ask for your seed phrase, and never send you to a "validation" or "sync" site. Anyone who does is a scammer.</div>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -891,6 +932,137 @@ const BACKEND_URL = (window.location.hostname === 'localhost' || window.location
   : 'https://orcaguard-production.up.railway.app';
 // Same public tip address as OrcaAppBuilder (LCAI tips) — KEIKO tips go here too.
 const GUARD_KEIKO_TIP_ADDRESS = '0x6518fD26a7aD2Fe1bA80De5f279Ee59F55C0A9bA';
+
+// ── Official domains + lookalike/typosquat detection ─────────────────────
+// Verified-safe hostnames (exact match). Subdomains of lightchain.ai are trusted via the root rule below.
+const OFFICIAL_DOMAINS = [
+  'lightchain.ai','bridge.lightchain.ai','workers.lightchain.ai','dao.lightchain.ai',
+  'docs.lightchain.ai','hub.lightchain.ai','lightdex.app','mainnet.lightscan.app',
+  'lightscan.app','app.uniswap.org','filament.exchange','orcaguard.win','orcamint.xyz'
+];
+// Brand tokens scammers imitate -> the real home they should resolve to.
+const PROTECTED_BRANDS = [
+  {token:'lightchain', official:'lightchain.ai'},
+  {token:'lightdex',   official:'lightdex.app'},
+  {token:'lightscan',  official:'mainnet.lightscan.app'},
+  {token:'uniswap',    official:'app.uniswap.org'},
+  {token:'metamask',   official:'metamask.io'},
+  {token:'filament',   official:'filament.exchange'},
+  {token:'orcaguard',  official:'orcaguard.win'}
+];
+const SAFE_LINKS_PACK = [
+  'https://lightchain.ai','https://lightdex.app','https://bridge.lightchain.ai',
+  'https://mainnet.lightscan.app','https://dao.lightchain.ai','https://docs.lightchain.ai',
+  'https://hub.lightchain.ai','https://orcaguard.win'
+];
+function _normHost(h){
+  h = (h||'').toLowerCase().trim();
+  if (h.startsWith('www.')) h = h.slice(4);
+  return h;
+}
+// Collapse common character swaps (leetspeak / homoglyph) so lightcha1n -> lightchain.
+function _deLeet(s){
+  return (s||'').toLowerCase()
+    .replace(/1/g,'i').replace(/0/g,'o').replace(/3/g,'e')
+    .replace(/5/g,'s').replace(/4/g,'a').replace(/7/g,'t')
+    .replace(/[^a-z]/g,'');
+}
+function _lev(a,b){
+  const m=a.length,n=b.length,d=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)d[i][0]=i; for(let j=0;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+    d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[m][n];
+}
+// Returns null if nothing conclusive, else {verdict, title, msg, closest}.
+function lookalikeCheck(host){
+  host = _normHost(host);
+  if (!host) return null;
+  // Exact official, or a subdomain of an official registrable domain.
+  for (const d of OFFICIAL_DOMAINS){
+    if (host === d || host.endsWith('.'+d)) {
+      return { verdict:'safe', title:'✅ Official domain',
+        msg:'This is a verified official domain ('+d+'). It is safe to connect — but always confirm the spelling in your address bar every time.', closest:d };
+    }
+  }
+  const deHost = _deLeet(host);
+  for (const b of PROTECTED_BRANDS){
+    const off = b.official;
+    // Brand name appears in the host but it is NOT an official domain -> impersonation.
+    if (deHost.includes(b.token)) {
+      return { verdict:'danger', title:'🔴 Possible lookalike / impersonation',
+        msg:'This site uses the "'+b.token+'" name but is NOT an official domain. The real site is '+off+'. Lookalike domains (extra words, different endings, swapped letters/numbers) are a common way wallets get drained. Do not connect — open the official site from your own bookmark instead.',
+        closest:off };
+    }
+    // Very close edit-distance to the official registrable label (e.g. lightcha1n.ai de-leets to a 0/1 distance).
+    const offLabel = off.split('.')[0];
+    const hostLabel = host.split('.')[0];
+    const dist = _lev(_deLeet(hostLabel), offLabel);
+    if (dist>0 && dist<=1) {
+      return { verdict:'danger', title:'🔴 Possible typosquat',
+        msg:'This domain is one character away from the official "'+off+'". Typosquats like this are built to catch misspellings and drain wallets. Do not connect — use the official site: '+off+'.',
+        closest:off };
+    }
+  }
+  return null;
+}
+function copySafeLinks(){
+  const txt = SAFE_LINKS_PACK.join('\n');
+  const done = ()=>{ const el=document.getElementById('safeLinksStatus'); if(el){ el.textContent='✅ Safe links copied to clipboard.'; setTimeout(()=>{el.textContent='';},4000); } };
+  if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done).catch(()=>{}); }
+  else { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');done();}catch(e){} ta.remove(); }
+}
+
+// ── Quick-check router (home) ────────────────────────────────────────────
+// Routes a single input to the right tool: 0x address -> Contract, URL-ish -> Website, else -> Ask AI.
+function quickCheck(){
+  const box = document.getElementById('quickCheckInput');
+  if (!box) return;
+  const v = box.value.trim();
+  if (!v) return;
+  if (/^0x[0-9a-fA-F]{40}$/.test(v)) {
+    showPage('contract');
+    const ci = document.getElementById('contractInput'); if (ci) ci.value = v;
+    if (typeof checkContract === 'function') checkContract();
+    return;
+  }
+  // URL-ish: has a dot and no spaces, or an explicit scheme.
+  if (/^(https?:\/\/|[^\s]+\.[a-z]{2,})/i.test(v) && !/\s/.test(v)) {
+    showPage('url');
+    const ui = document.getElementById('urlInput'); if (ui) ui.value = v;
+    if (typeof checkURL === 'function') checkURL();
+    return;
+  }
+  // Everything else -> Ask OrcaGuard (prefill only; user presses send so we never fire a paid AI job by surprise).
+  showPage('ask');
+  const ai = document.getElementById('aiInput'); if (ai) { ai.value = v; ai.focus(); }
+}
+function quickCheckKey(e){ if (e && e.key === 'Enter') quickCheck(); }
+
+// ── PWA: service worker + install prompt ─────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+let _deferredInstall = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredInstall = e;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'inline-block';
+});
+function pwaInstall(){
+  if (!_deferredInstall) return;
+  _deferredInstall.prompt();
+  _deferredInstall.userChoice.finally(()=>{
+    _deferredInstall = null;
+    const btn = document.getElementById('pwaInstallBtn');
+    if (btn) btn.style.display = 'none';
+  });
+}
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+});
 
 // ── Navigation ─────────────────────────────────────────────────────────
 function showPage(id) {
@@ -1041,6 +1213,18 @@ async function checkURL() {
   const input = document.getElementById('urlInput').value.trim();
   const btn   = document.getElementById('urlBtn');
   if (!input) return;
+
+  // Instant offline lookalike/typosquat + official-domain check before hitting the backend.
+  try {
+    let host = input;
+    try { host = new URL(input.includes('://') ? input : ('https://' + input)).hostname; } catch (_) {}
+    const la = lookalikeCheck(host);
+    if (la) {
+      showResult('urlResult', la.verdict, la.msg,
+        la.closest ? ['https://' + la.closest.replace(/^https?:\/\//,'')] : []);
+      return;
+    }
+  } catch (_) {}
 
   btn.disabled = true; btn.textContent = t('btn_checking');
   showResult('urlResult', 'pending', t('msg_checking_url'), null);
@@ -1332,7 +1516,21 @@ async function connectWalletAudit() {
     checks.push({ ok: null, text: t('audit_check_revoke') });
 
     const checksEl = document.getElementById('auditChecks');
-    checksEl.innerHTML = checks.map(c => {
+    // Wallet hygiene score — share of scored checks that passed (link-only items excluded).
+    const scored = checks.filter(c => c.ok !== null);
+    const passed = scored.filter(c => c.ok).length;
+    const pct = scored.length ? Math.round((passed / scored.length) * 100) : 0;
+    const scoreColor = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+    const scoreLabel = pct >= 80 ? 'Healthy' : pct >= 50 ? 'Needs attention' : 'At risk';
+    let scoreHtml = '';
+    if (scored.length) {
+      scoreHtml = '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px;margin-bottom:12px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">'
+        + '<span style="font-size:17px;color:var(--text);font-weight:700">Wallet hygiene</span>'
+        + '<span style="font-size:17px;color:' + scoreColor + ';font-weight:700">' + pct + '% · ' + scoreLabel + ' (' + passed + '/' + scored.length + ')</span></div>'
+        + '<div style="height:8px;border-radius:6px;background:rgba(255,255,255,0.08);overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + scoreColor + '"></div></div></div>';
+    }
+    checksEl.innerHTML = scoreHtml + checks.map(c => {
       const icon  = c.ok === null ? '🔗' : (c.ok ? '✅' : '⚠️');
       const color = c.ok === null ? 'rgba(0,212,255,0.08)' : (c.ok ? 'rgba(0,230,118,0.07)' : 'rgba(255,170,0,0.07)');
       const border= c.ok === null ? 'rgba(0,212,255,0.2)' : (c.ok ? 'rgba(0,230,118,0.25)' : 'rgba(255,170,0,0.3)');
