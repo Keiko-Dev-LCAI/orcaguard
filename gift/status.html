@@ -64,6 +64,9 @@
   .status.err,.status.work{color:#EE11FB}
   .note{font-size:13px; color:#CCCEEF; margin-top:16px; max-width:62ch}
   .note b{font-weight:700}
+  .howlink{display:block; margin:16px 32px 0; color:#fff; font-weight:650; font-size:15px; text-decoration:underline; text-underline-offset:3px}
+  .howlink:hover{color:#CCCEEF}
+  @media (max-width:900px){ .howlink{margin:12px 16px 0} }
   #instructions{scroll-margin-top:16px}
   .legal{max-width:760px; margin:4px auto 28px; padding:0 32px; color:#CCCEEF; font-size:13px; line-height:1.5}
   .legal summary{cursor:pointer; font-weight:650; color:#CCCEEF}
@@ -87,10 +90,10 @@
     <a href="redeem.html">Redeem</a>
     <span aria-hidden="true">|</span>
     <a href="status.html" aria-current="page">Status</a>
-    <span aria-hidden="true">|</span>
-    <a href="#instructions" id="toInstructions">Instructions</a>
   </nav>
 </header>
+
+<a class="howlink" href="#instructions" id="toInstructions">How this works, and the limits</a>
 
 <div class="wrap">
   <div class="card">

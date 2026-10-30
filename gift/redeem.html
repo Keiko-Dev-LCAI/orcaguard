@@ -96,6 +96,9 @@
   .txlink a:focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
   code{background:#14152C; padding:1px 6px; border-radius:6px; font-size:12.5px}
   .hr{height:1px; background:var(--line); margin:22px 0}
+  .howlink{display:block; margin:16px 32px 0; color:#fff; font-weight:650; font-size:15px; text-decoration:underline; text-underline-offset:3px}
+  .howlink:hover{color:#CCCEEF}
+  @media (max-width:900px){ .howlink{margin:12px 16px 0} }
   #instructions{scroll-margin-top:16px}
   .legal{max-width:760px; margin:4px auto 28px; padding:0 32px; color:#CCCEEF; font-size:13px; line-height:1.5}
   .legal summary{cursor:pointer; font-weight:650; color:#CCCEEF}
@@ -119,10 +122,10 @@
     <a href="redeem.html" aria-current="page">Redeem</a>
     <span aria-hidden="true">|</span>
     <a href="status.html">Status</a>
-    <span aria-hidden="true">|</span>
-    <a href="#instructions" id="toInstructions">Instructions</a>
   </nav>
 </header>
+
+<a class="howlink" href="#instructions" id="toInstructions">How this works, and the limits</a>
 
 <div class="wrap">
   <!-- LEFT: the card face -->

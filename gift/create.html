@@ -103,6 +103,9 @@
   .linkfield input{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:13px}
   .pill{display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 8px; font-size:12px; font-weight:600}
   code{background:#14152C; padding:1px 6px; border-radius:6px; font-size:12.5px}
+  .howlink{display:block; margin:16px 32px 0; color:#fff; font-weight:650; font-size:15px; text-decoration:underline; text-underline-offset:3px}
+  .howlink:hover{color:#CCCEEF}
+  @media (max-width:900px){ .howlink{margin:12px 16px 0} }
   #instructions{scroll-margin-top:16px}
   .legal{max-width:760px; margin:4px auto 28px; padding:0 32px; color:#CCCEEF; font-size:13px; line-height:1.5}
   .legal summary{cursor:pointer; font-weight:650; color:#CCCEEF}
@@ -126,8 +129,6 @@
     <a href="redeem.html">Redeem</a>
     <span aria-hidden="true">|</span>
     <a href="status.html">Status</a>
-    <span aria-hidden="true">|</span>
-    <a href="#instructions" id="toInstructions">Instructions</a>
   </nav>
   <div class="wallet">
     <span id="walletAddr" class="addr" hidden></span>
@@ -135,6 +136,8 @@
     <button id="disconnectBtn" class="btn secondary connect" type="button" hidden>Disconnect</button>
   </div>
 </header>
+
+<a class="howlink" href="#instructions" id="toInstructions">How this works, and the limits</a>
 
 <div id="linkbox" class="linkbox">
   <h2 style="margin-top:0">Your gift link</h2>
