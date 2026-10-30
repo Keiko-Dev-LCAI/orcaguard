@@ -161,7 +161,7 @@
     <input id="noteIn" type="text" maxlength="120" placeholder="Happy birthday!" />
     <div class="note">The note rides inside the link, not on any server.</div>
 
-    <button id="createBtn" class="btn" disabled>Connect a wallet to start</button>
+    <button id="createBtn" class="btn" type="button">Connect a wallet to start</button>
     <div id="status" class="status"></div>
   </div>
 
@@ -309,7 +309,7 @@ async function disconnect(){
   $("connectBtn").classList.remove("is-on");
   $("disconnectBtn").hidden = true;
   $("disconnectBtn").disabled = false;
-  $("createBtn").disabled = true;
+  $("createBtn").disabled = false;
   $("createBtn").textContent = "Connect a wallet to start";
   setStatus("Wallet disconnected. Connect again to choose an account.","ok");
 }
