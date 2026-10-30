@@ -81,7 +81,9 @@
   .btn.connect{width:auto; margin:0; padding:10px 16px; flex:none}
   .btn.connect.is-on{cursor:default}
   .btn.connect.is-on:hover{transform:none}
-  button[hidden]{display:none !important}
+  .btn.connect.is-lock{background:#5B4BFF; color:#fff; border-color:transparent}
+  .addr{color:#CCCEEF; font:650 13px/1 Inter,sans-serif; white-space:nowrap}
+  button[hidden],.addr[hidden]{display:none !important}
   @media (max-width:700px){
     .wallet{flex:1 0 100%; margin-left:0}
     .btn.connect{flex:1 1 auto}
@@ -111,6 +113,7 @@
   .warn{border:1px solid #DD00AC; color:#CCCEEF; border-radius:12px; padding:14px 16px; font-size:14px; margin-top:18px}
   .warn b{color:#EE11FB}
   .status{margin-top:14px; font-size:14px; color:#CCCEEF; min-height:20px}
+  .status:empty{display:none}
   .status.err{color:#EE11FB}
   .status.ok{color:#EE11FB}
   .linkbox{display:none; margin-top:18px}
@@ -136,6 +139,7 @@
     <a href="status.html">Status</a>
   </nav>
   <div class="wallet">
+    <span id="walletAddr" class="addr" hidden></span>
     <button id="connectBtn" class="btn secondary connect" type="button">Connect wallet</button>
     <button id="disconnectBtn" class="btn secondary connect" type="button" hidden>Disconnect</button>
   </div>
@@ -161,7 +165,6 @@
     <input id="noteIn" type="text" maxlength="120" placeholder="Happy birthday!" />
     <div class="note">The note rides inside the link, not on any server.</div>
 
-    <button id="createBtn" class="btn" type="button">Connect a wallet to start</button>
     <div id="status" class="status"></div>
   </div>
 
@@ -282,11 +285,12 @@ async function connect(){
     signer = await provider.getSigner();
     connected = true;
     const addr = await signer.getAddress();
-    $("connectBtn").textContent = addr.slice(0,6)+"…"+addr.slice(-4);
-    $("connectBtn").classList.add("is-on");
+    $("walletAddr").textContent = addr.slice(0,6)+"…"+addr.slice(-4);
+    $("walletAddr").hidden = false;
+    $("connectBtn").textContent = "Lock the gift";
+    $("connectBtn").classList.add("is-lock");
+    $("connectBtn").disabled = false;
     $("disconnectBtn").hidden = false;
-    $("createBtn").disabled = false;
-    $("createBtn").textContent = "Lock the gift";
     await refreshCushion();
     setStatus("Wallet connected.","ok");
   }catch(e){
@@ -305,12 +309,13 @@ async function disconnect(){
   provider = null;
   signer = null;
   connected = false;
+  $("walletAddr").hidden = true;
+  $("walletAddr").textContent = "";
   $("connectBtn").textContent = "Connect wallet";
-  $("connectBtn").classList.remove("is-on");
+  $("connectBtn").classList.remove("is-lock");
+  $("connectBtn").disabled = false;
   $("disconnectBtn").hidden = true;
   $("disconnectBtn").disabled = false;
-  $("createBtn").disabled = false;
-  $("createBtn").textContent = "Connect a wallet to start";
   setStatus("Wallet disconnected. Connect again to choose an account.","ok");
 }
 
@@ -365,7 +370,7 @@ async function createCard(){
   const cardId = giftKey.address;
 
   try{
-    $("createBtn").disabled = true;
+    $("connectBtn").disabled = true;
     setStatus("Confirm the transaction in your wallet…");
     const c = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, signer);
     const tx = await c.create(cardId, gift, endDate, { value: gift + cushion });
@@ -386,13 +391,12 @@ async function createCard(){
   }catch(e){
     setStatus((e && (e.shortMessage||e.message)) || "Transaction failed.","err");
   }finally{
-    if(connected) $("createBtn").disabled = false;
+    if(connected) $("connectBtn").disabled = false;
   }
 }
 
-$("connectBtn").onclick = ()=>{ if(!connected) connect(); };
+$("connectBtn").onclick = ()=>{ if(connected) createCard(); else connect(); };
 $("disconnectBtn").onclick = disconnect;
-$("createBtn").onclick = createCard;
 $("copyBtn").onclick = async ()=>{ try{ await navigator.clipboard.writeText($("link").value); $("copyBtn").textContent="Copied"; setTimeout(()=>$("copyBtn").textContent="Copy",1500);}catch{} };
 updateSummary();
 </script>
