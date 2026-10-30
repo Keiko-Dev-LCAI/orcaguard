@@ -99,6 +99,13 @@
   .status.err,.status.ok,.status.work{color:#EE11FB}
   code{background:#14152C; padding:1px 6px; border-radius:6px; font-size:12.5px}
   .hr{height:1px; background:var(--line); margin:22px 0}
+  .legal{max-width:760px; margin:4px auto 28px; padding:0 32px; color:#CCCEEF; font-size:13px; line-height:1.5}
+  .legal summary{cursor:pointer; font-weight:650; color:#CCCEEF}
+  .legal summary:focus-visible{outline:2px solid #5B4BFF; outline-offset:3px}
+  .legal h2{margin:14px 0 6px; font-size:13px; font-weight:650; letter-spacing:0}
+  .legal ul{margin:0; padding-left:1.15em}
+  .legal p{margin:0}
+  @media (max-width:900px){ .legal{padding:0 16px; margin-bottom:20px} }
 </style>
 </head>
 <body>
@@ -176,6 +183,21 @@
     <div class="status" id="selfStatus"></div>
   </div>
 </div>
+
+<details class="legal">
+  <summary>How this works, and the limits</summary>
+  <h2>Instructions</h2>
+  <ul>
+    <li>You send the link yourself. The app never sees your email or the gift code.</li>
+    <li>Anyone who opens the link can claim the card. Keep amounts small.</li>
+    <li>After the end date the card can only be returned to the sender. Early cancel is possible only before it is claimed.</li>
+    <li>The recipient needs an address they control, or must save a page-generated key before the coins move.</li>
+  </ul>
+  <h2>Privacy</h2>
+  <p>We keep no personal information. No accounts, no database, and no copy of your email, the gift code, or your visit. The one-time key lives only in the link you send. A hosted helper may submit the redeem for you and sees only what is needed to do that. It stores nothing.</p>
+  <h2>Disclaimer</h2>
+  <p>This is a free, no-custody tool. The app owner never holds the funds and charges no fee. You are responsible for the wallet you use, the link you send, and the amount you lock. No warranty. Use at your own risk. Not financial advice. Lost keys or shared links cannot be recovered by the app.</p>
+</details>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
 <script>
