@@ -97,6 +97,9 @@
   .gate input{margin-top:3px; accent-color:#5B4BFF}
   .status{margin-top:14px; font-size:14px; color:#CCCEEF; min-height:20px}
   .status.err,.status.ok,.status.work{color:#EE11FB}
+  .txlink{margin:8px 0 0; font-size:14px}
+  .txlink a{color:#CCCEEF}
+  .txlink a:focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
   code{background:#14152C; padding:1px 6px; border-radius:6px; font-size:12.5px}
   .hr{height:1px; background:var(--line); margin:22px 0}
   .legal{max-width:760px; margin:4px auto 28px; padding:0 32px; color:#CCCEEF; font-size:13px; line-height:1.5}
@@ -234,6 +237,25 @@ const STATE = ["none","funded","claimed","expired","returned"]; // display only
 
 const $ = (id) => document.getElementById(id);
 function setStatus(id, msg, kind){ const el=$(id); el.textContent=msg||""; el.className="status"+(kind?" "+kind:""); }
+function showTx(statusId, hash){
+  const id = statusId + "Tx";
+  let el = $(id);
+  if(!el){
+    el = document.createElement("p");
+    el.id = id;
+    el.className = "txlink";
+    $(statusId).insertAdjacentElement("afterend", el);
+  }
+  el.replaceChildren();
+  if(!/^0x[0-9a-fA-F]{64}$/.test(hash || "")){ el.hidden = true; return; }
+  const a = document.createElement("a");
+  a.href = "https://mainnet.lightscan.app/tx/" + hash;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.textContent = "View this transaction on Lightscan";
+  el.hidden = false;
+  el.appendChild(a);
+}
 
 // ---- read the gift key + note + face from the URL fragment (never sent to a server) ----
 let giftKey = null, cardId = null, note = "", faceIdx = 0;
@@ -362,14 +384,18 @@ $("redeemBtn").addEventListener("click", async ()=>{
     setStatus("status","Signing the claim…","work");
     const signature = await buildSignature(payout);
     setStatus("status","Sending to the relayer…","work");
+    showTx("status", "");
     const res = await fetch(CONFIG.RELAYER_URL, {
       method:"POST", headers:{"content-type":"application/json"},
       body: JSON.stringify({ cardId, payout, signature })
     });
+    const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error("relayer said no ("+res.status+")");
     setStatus("status","Done. The coins are on the way to "+payout.slice(0,6)+"…"+payout.slice(-4)+".","ok");
+    showTx("status", data && data.txHash);
     $("redeemBtn").disabled = true; $("selfBtn").disabled = true;
   }catch(e){
+    showTx("status", "");
     setStatus("status","Relayer failed: "+(e.message||e)+". Try self-submit below.","err");
   }
 });
@@ -392,11 +418,14 @@ $("selfBtn").addEventListener("click", async ()=>{
     const s = await bp.getSigner();
     const c = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, s);
     setStatus("selfStatus","Submitting from your wallet…","work");
+    showTx("selfStatus", "");
     const tx = await c.claim(cardId, payout, signature);
     await tx.wait();
     setStatus("selfStatus","Done. The coins are in "+payout.slice(0,6)+"…"+payout.slice(-4)+". Your gas comes back from the cushion.","ok");
+    showTx("selfStatus", tx.hash);
     $("redeemBtn").disabled = true; $("selfBtn").disabled = true;
   }catch(e){
+    showTx("selfStatus", "");
     setStatus("selfStatus","Could not submit: "+(e.message||e),"err");
   }
 });
