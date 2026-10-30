@@ -67,8 +67,14 @@
   .btn:disabled{opacity:.5; cursor:not-allowed}
   .btn.secondary{background:transparent; color:#CCCEEF; border:1px solid var(--line); box-shadow:none}
   .btn.secondary:hover:not(:disabled){border-color:#5B4BFF}
-  .btn.connect{width:auto; margin:0 0 0 auto; padding:10px 16px; flex:none}
-  @media (max-width:700px){ .btn.connect{flex:1 0 100%; width:100%; margin:8px 0 0} }
+  .wallet{margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .btn.connect{width:auto; margin:0; padding:10px 16px; flex:none}
+  .btn.connect.is-on{cursor:default}
+  .btn.connect.is-on:hover{transform:none}
+  @media (max-width:700px){
+    .wallet{flex:1 0 100%; margin-left:0}
+    .btn.connect{flex:1 1 auto}
+  }
   .summary{background:transparent; border:none; padding:0; animation:none}
   .gift{border-radius:22px; padding:26px 22px 22px; min-height:210px; position:relative; overflow:hidden;
     background:#14152C; box-shadow:0 18px 32px rgba(0,0,0,.45);
@@ -110,7 +116,10 @@
     <span class="tag">Create a card</span>
   </div>
   <nav><a href="status.html">Card status</a></nav>
-  <button id="connectBtn" class="btn secondary connect">Connect wallet</button>
+  <div class="wallet">
+    <button id="connectBtn" class="btn secondary connect" type="button">Connect wallet</button>
+    <button id="disconnectBtn" class="btn secondary connect" type="button" hidden>Disconnect</button>
+  </div>
 </header>
 
 <div class="wrap">
@@ -239,17 +248,50 @@ FACES.forEach((f,i)=>{
 
 async function connect(){
   if(!window.ethereum){ setStatus("No wallet found. Install a Lightchain-compatible wallet.","err"); return; }
-  provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  await ensureChain();
-  signer = await provider.getSigner();
-  connected = true;
-  const addr = await signer.getAddress();
-  $("connectBtn").textContent = addr.slice(0,6)+"…"+addr.slice(-4);
-  $("createBtn").disabled = false;
-  $("createBtn").textContent = "Lock the gift";
-  await refreshCushion();
-  setStatus("Wallet connected.","ok");
+  let permitted = false;
+  try{
+    await window.ethereum.request({ method:"wallet_requestPermissions", params:[{ eth_accounts:{} }] });
+    permitted = true;
+  }catch(e){
+    if(e && e.code === 4001){ setStatus("Connection cancelled.","err"); return; }
+  }
+  try{
+    provider = new ethers.BrowserProvider(window.ethereum);
+    if(!permitted) await provider.send("eth_requestAccounts", []);
+    await ensureChain();
+    signer = await provider.getSigner();
+    connected = true;
+    const addr = await signer.getAddress();
+    $("connectBtn").textContent = addr.slice(0,6)+"…"+addr.slice(-4);
+    $("connectBtn").classList.add("is-on");
+    $("disconnectBtn").hidden = false;
+    $("createBtn").disabled = false;
+    $("createBtn").textContent = "Lock the gift";
+    await refreshCushion();
+    setStatus("Wallet connected.","ok");
+  }catch(e){
+    if(e && e.code === 4001){ setStatus("Connection cancelled.","err"); return; }
+    setStatus((e && (e.shortMessage||e.message)) || "Could not connect the wallet.","err");
+  }
+}
+
+async function disconnect(){
+  $("disconnectBtn").disabled = true;
+  try{
+    if(window.ethereum){
+      await window.ethereum.request({ method:"wallet_revokePermissions", params:[{ eth_accounts:{} }] });
+    }
+  }catch(e){ /* some wallets have no revoke; the page still drops the session */ }
+  provider = null;
+  signer = null;
+  connected = false;
+  $("connectBtn").textContent = "Connect wallet";
+  $("connectBtn").classList.remove("is-on");
+  $("disconnectBtn").hidden = true;
+  $("disconnectBtn").disabled = false;
+  $("createBtn").disabled = true;
+  $("createBtn").textContent = "Connect a wallet to start";
+  setStatus("Wallet disconnected. Connect again to choose an account.","ok");
 }
 
 async function ensureChain(){
@@ -324,11 +366,12 @@ async function createCard(){
   }catch(e){
     setStatus((e && (e.shortMessage||e.message)) || "Transaction failed.","err");
   }finally{
-    $("createBtn").disabled = false;
+    if(connected) $("createBtn").disabled = false;
   }
 }
 
-$("connectBtn").onclick = connect;
+$("connectBtn").onclick = ()=>{ if(!connected) connect(); };
+$("disconnectBtn").onclick = disconnect;
 $("createBtn").onclick = createCard;
 $("copyBtn").onclick = async ()=>{ try{ await navigator.clipboard.writeText($("link").value); $("copyBtn").textContent="Copied"; setTimeout(()=>$("copyBtn").textContent="Copy",1500);}catch{} };
 updateSummary();
