@@ -56,20 +56,6 @@
     border-radius:10px; padding:12px 13px; font:15px/1.4 Inter,sans-serif; outline:none;
   }
   input:focus{border-color:#5B4BFF}
-  .faces{display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:6px}
-  button.face{position:relative; overflow:hidden; width:100%; aspect-ratio:1.9/1; height:auto;
-    border-radius:12px; border:1px solid var(--line); cursor:pointer; padding:0;
-    background:#14152C; color:#CCCEEF; text-align:left;
-    box-shadow:0 8px 14px rgba(0,0,0,.4)}
-  button.face svg{position:absolute; inset:0; width:100%; height:100%; display:block}
-  button.face .fname{position:relative; z-index:1; display:block; max-width:70%; padding:7px 8px;
-    font:650 12px/1.2 Inter,sans-serif; letter-spacing:-0.01em}
-  @media (max-width:700px){ .faces{grid-template-columns:1fr 1fr} }
-  button.face.sel{border-color:transparent}
-  button.face.sel::after{content:""; position:absolute; inset:0; border-radius:inherit; padding:2px; pointer-events:none;
-    background:linear-gradient(135deg,#5B4BFF,#EE11FB);
-    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite:xor; mask-composite:exclude}
   .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
     background:#5B4BFF; color:#fff; border:none; border-radius:12px; padding:13px 18px;
     font:700 15px/1 Inter,sans-serif; cursor:pointer; width:100%; margin-top:20px;
@@ -90,22 +76,15 @@
     .btn.connect{flex:1 1 auto}
   }
   .summary{background:transparent; border:none; padding:0; animation:none}
-  .gift{border-radius:22px; padding:26px 22px 22px; min-height:240px; position:relative; overflow:hidden;
-    background:#14152C; box-shadow:0 18px 32px rgba(0,0,0,.45);
-    transform:perspective(800px) rotateX(7deg); transform-origin:center bottom;
-    transition:transform .25s ease}
-  .gift::after{content:""; position:absolute; inset:0; border-radius:inherit; padding:2px; pointer-events:none;
-    background:linear-gradient(135deg,#5B4BFF,#EE11FB);
-    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite:xor; mask-composite:exclude}
-  .gift:hover{transform:perspective(800px) rotateX(0deg) translateY(-6px)}
-  .gift .face{position:absolute; inset:16px; width:auto; height:auto; pointer-events:none; overflow:hidden}
-  .gift .face svg{width:100%; height:100%; max-width:100%; max-height:100%; display:block}
-  .gift .occasion,.gift .amt,.gift .msg{position:relative; z-index:1}
-  .gift .occasion{font:650 13px/1.2 Inter,sans-serif; letter-spacing:-0.01em; color:#CCCEEF}
-  .gift .amt{font-size:36px; font-weight:700; letter-spacing:-0.03em; margin-top:28px; color:#CCCEEF; max-width:52%}
-  .gift .amt small{font-size:16px; font-weight:600; margin-left:6px; color:#EE11FB}
-  .gift .msg{margin-top:8px; font-size:15px; color:#CCCEEF; max-width:52%}
+  .gift{border-radius:28px; border:10px solid #5B4BFF; background:#fff; color:#14152C;
+    padding:26px 22px 22px; text-align:center; max-width:460px;
+    box-shadow:0 18px 32px rgba(0,0,0,.35)}
+  .gift .orbit{width:180px; height:180px; display:block; margin:0 auto}
+  .gift .word{margin-top:2px; font:800 26px/1 Inter,sans-serif; letter-spacing:.04em; color:#14152C}
+  .gift .amt{font-size:28px; font-weight:700; letter-spacing:-0.03em; margin-top:14px; color:#14152C}
+  .gift .amt small{font-size:14px; font-weight:650; margin-left:6px; letter-spacing:0; color:#14152C}
+  .gift .msg{margin:8px auto 0; font-size:15px; color:#14152C; max-width:32ch}
+  .gift .msg:empty{display:none}
   .line{display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--line)}
   .line span:first-child{color:#CCCEEF}
   .line.total{font-weight:700; border-bottom:none; padding-top:16px}
@@ -180,9 +159,6 @@
     <input id="end" type="datetime-local" />
     <div class="note">After this date, the card can only be sent back to you. You pick the date.</div>
 
-    <label>Occasion</label>
-    <div class="faces" id="faces"></div>
-
     <label for="noteIn">Short note (optional)</label>
     <input id="noteIn" type="text" maxlength="120" placeholder="Happy birthday!" />
     <div class="note">The note rides inside the link, not on any server.</div>
@@ -192,8 +168,23 @@
 
   <div class="summary">
     <div class="gift" id="preview">
-      <div class="face" id="previewFace"></div>
-      <div class="occasion" id="previewName">Birthday</div>
+      <svg class="orbit" viewBox="0 0 200 200" aria-hidden="true">
+        <defs>
+          <linearGradient id="cardOrbit" x1="30" y1="16" x2="170" y2="184" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#5B4BFF"/>
+            <stop offset="1" stop-color="#EE11FB"/>
+          </linearGradient>
+        </defs>
+        <g fill="none" stroke="url(#cardOrbit)" stroke-width="3.6" stroke-linecap="round">
+          <ellipse cx="100" cy="100" rx="66" ry="42"/>
+          <ellipse cx="100" cy="100" rx="66" ry="42" transform="rotate(36 100 100)"/>
+          <ellipse cx="100" cy="100" rx="66" ry="42" transform="rotate(72 100 100)"/>
+          <ellipse cx="100" cy="100" rx="66" ry="42" transform="rotate(108 100 100)"/>
+          <ellipse cx="100" cy="100" rx="66" ry="42" transform="rotate(144 100 100)"/>
+        </g>
+        <path fill="url(#cardOrbit)" d="M103 58 L81 98 H97 L87 140 L119 92 H101 L113 58 Z"/>
+      </svg>
+      <div class="word">GIFT CARD</div>
       <div class="amt" id="previewAmt">0 <small>LCAI</small></div>
       <div class="msg" id="previewMsg"></div>
     </div>
@@ -255,40 +246,18 @@ const CLAIM_GAS_ESTIMATE = 120000n;   // rough gas for a claim; cushion = gasPri
 const CUSHION_SAFETY = 15n;           // x1.5  (divided by 10 below)
 
 const ABI = ["function create(address cardId, uint256 amount, uint64 endDate) payable"];
-
-const FACES = [
-  { name:"Birthday", art:'<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="200" fill="#14152C"/><circle cx="206" cy="34" r="2.2" fill="#CCCEEF"/><circle cx="236" cy="20" r="1.6" fill="#CCCEEF"/><circle cx="304" cy="42" r="2" fill="#CCCEEF"/><circle cx="248" cy="52" r="3" fill="#EE11FB"/><circle cx="292" cy="26" r="2.4" fill="#DD00AC"/><rect x="196" y="128" width="108" height="42" rx="8" fill="#5B4BFF"/><rect x="186" y="114" width="128" height="18" rx="6" fill="#DD00AC"/><rect x="216" y="80" width="7" height="36" rx="2" fill="#CCCEEF"/><rect x="248" y="68" width="7" height="48" rx="2" fill="#CCCEEF"/><rect x="280" y="86" width="7" height="30" rx="2" fill="#CCCEEF"/><circle cx="219.5" cy="76" r="6" fill="#EE11FB"/><circle cx="251.5" cy="64" r="6" fill="#EE11FB"/><circle cx="283.5" cy="82" r="6" fill="#EE11FB"/></svg>' },
-  { name:"Holiday", art:'<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="200" fill="#14152C"/><g fill="#CCCEEF"><circle cx="186" cy="26" r="2"/><circle cx="214" cy="46" r="1.6"/><circle cx="302" cy="20" r="2.2"/><circle cx="274" cy="54" r="1.5"/><circle cx="246" cy="16" r="1.4"/><circle cx="168" cy="58" r="1.5"/></g><path d="M258 34 L278 74 H238 Z" fill="#EE11FB"/><path d="M258 62 L298 118 H218 Z" fill="#5B4BFF"/><path d="M258 104 L316 170 H200 Z" fill="#5B4BFF"/><rect x="248" y="170" width="20" height="18" rx="2" fill="#DD00AC"/></svg>' },
-  { name:"Thank you", art:'<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="200" fill="#14152C"/><path d="M188 0h132v132L188 0z" fill="#5B4BFF"/><path d="M232 0h88v88L232 0z" fill="#DD00AC"/><circle cx="292" cy="30" r="8" fill="#EE11FB"/></svg>' },
-  { name:"Just because", art:'<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="200" fill="#14152C"/><circle cx="232" cy="124" r="38" fill="#5B4BFF"/><circle cx="286" cy="124" r="38" fill="#DD00AC"/><circle cx="259" cy="124" r="13" fill="#14152C"/><circle cx="259" cy="124" r="6" fill="#EE11FB"/></svg>' },
-  { name:"Congrats", art:'<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="200" fill="#14152C"/><path d="M252 22l16 48h50l-40 30 16 48-42-30-42 30 16-48-40-30h50z" fill="#5B4BFF"/><path d="M252 64l7 20h22l-18 13 7 20-18-13-18 13 7-20-18-13h22z" fill="#EE11FB"/><circle cx="176" cy="44" r="4" fill="#CCCEEF"/><circle cx="308" cy="36" r="3" fill="#DD00AC"/></svg>' },
-  { name:"For you", art:'<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="200" fill="#14152C"/><circle cx="270" cy="108" r="76" fill="#5B4BFF" opacity="0.22"/><circle cx="270" cy="108" r="46" fill="#14152C"/><circle cx="270" cy="108" r="8" fill="#EE11FB"/><rect x="214" y="172" width="58" height="4" rx="2" fill="#5B4BFF"/><rect x="278" y="172" width="20" height="4" rx="2" fill="#DD00AC"/></svg>' }
-];
 /* ================================================================================ */
 
-let provider, signer, connected = false, selectedFace = 0;
+let provider, signer, connected = false;
 
 const $ = (id) => document.getElementById(id);
 function setStatus(msg, kind){ const el=$("status"); el.textContent=msg||""; el.className="status"+(kind?" "+kind:""); }
 
-// build the face picker
 function paintPreview(){
-  const face = FACES[selectedFace];
-  $("previewFace").innerHTML = face.art.replace('preserveAspectRatio="xMidYMid slice"', 'preserveAspectRatio="xMidYMid meet"');
-  $("previewName").textContent = face.name;
   const raw = ($("amount").value || "").trim();
   $("previewAmt").innerHTML = (raw === "" ? "0" : raw) + " <small>LCAI</small>";
   $("previewMsg").textContent = $("noteIn").value || "";
 }
-FACES.forEach((f,i)=>{
-  const d=document.createElement("button");
-  d.type = "button";
-  d.className="face"+(i===0?" sel":"");
-  d.setAttribute("aria-label", f.name);
-  d.innerHTML = f.art + '<span class="fname">'+f.name+'</span>';
-  d.onclick=()=>{ selectedFace=i; document.querySelectorAll("button.face").forEach((x,j)=>x.classList.toggle("sel",j===i)); paintPreview(); };
-  $("faces").appendChild(d);
-});
 
 // default expiry: 30 days out
 (function(){
@@ -404,11 +373,10 @@ async function createCard(){
     setStatus("Locking the gift on-chain…");
     await tx.wait();
 
-    // 2) build the link. Key + note + face ONLY after the # (never sent to a server).
+    // 2) build the link. Key + note ONLY after the # (never sent to a server).
     const frag = new URLSearchParams();
     frag.set("k", giftKey.privateKey);
     if($("noteIn").value) frag.set("n", $("noteIn").value);
-    frag.set("f", String(selectedFace));
     const link = CONFIG.REDEEM_URL + "#" + frag.toString();
 
     $("link").value = link;
