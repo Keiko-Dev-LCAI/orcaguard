@@ -116,8 +116,9 @@
   .status:empty{display:none}
   .status.err{color:#EE11FB}
   .status.ok{color:#EE11FB}
-  .linkbox{display:none; margin-top:18px}
-  .linkbox.show{display:block}
+  .linkbox{display:none; margin:16px 32px 0; scroll-margin-top:12px}
+  .linkbox.show{display:block; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px}
+  @media (max-width:900px){ .linkbox{margin:12px 16px 0} }
   .linkfield{display:flex; gap:10px; margin-top:8px}
   .linkfield input{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:13px}
   .pill{display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 8px; font-size:12px; font-weight:600}
@@ -151,6 +152,16 @@
     <button id="disconnectBtn" class="btn secondary connect" type="button" hidden>Disconnect</button>
   </div>
 </header>
+
+<div id="linkbox" class="linkbox">
+  <h2 style="margin-top:0">Your gift link</h2>
+  <p class="sub">Copy this and email it yourself. We do not store or send it.</p>
+  <div class="linkfield">
+    <input id="link" type="text" readonly />
+    <button id="copyBtn" class="btn secondary" style="width:auto; margin:0">Copy</button>
+  </div>
+  <div class="note" id="cardIdNote"></div>
+</div>
 
 <div class="wrap">
   <!-- LEFT: the form -->
@@ -200,16 +211,6 @@
       <b>Before you send:</b> anyone who can open the link can claim this gift. Send it only to the
       person you mean to, and keep gift cards small. There is no way to take it back once it is claimed
       (only before, via early cancel).
-    </div>
-
-    <div id="linkbox" class="linkbox">
-      <h2 style="margin-top:6px">Your gift link</h2>
-      <p class="sub">Copy this and email it yourself. We do not store or send it.</p>
-      <div class="linkfield">
-        <input id="link" type="text" readonly />
-        <button id="copyBtn" class="btn secondary" style="width:auto; margin:0">Copy</button>
-      </div>
-      <div class="note" id="cardIdNote"></div>
     </div>
   </div>
 </div>
@@ -410,6 +411,8 @@ async function createCard(){
     $("linkbox").classList.add("show");
     $("cardIdNote").innerHTML = "Card id (public, for the status page): <code>"+cardId+"</code>";
     setStatus("Gift locked. Copy the link and email it yourself.","ok");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    $("linkbox").scrollIntoView({behavior: reduce ? "auto" : "smooth", block:"start"});
   }catch(e){
     setStatus((e && (e.shortMessage||e.message)) || "Transaction failed.","err");
   }finally{
