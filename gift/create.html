@@ -36,7 +36,7 @@
     html{scroll-behavior:auto}
     .gift{transform:none!important}
   }
-  header{padding:18px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  header{padding:12px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
   .mark{width:36px; height:36px; flex:none; display:block}
   header h1{font-size:18px; margin:0; font-weight:650; letter-spacing:-0.02em; white-space:nowrap}
   header .tag{color:#CCCEEF; font-size:13px}
@@ -45,12 +45,13 @@
   header nav a[aria-current="page"]{color:#fff}
   header nav span{color:#CCCEEF; opacity:.45}
   header > div{flex:none}
-  .wrap{width:100%; padding:28px 32px; display:grid; grid-template-columns:1.05fr .95fr; gap:36px; align-items:start}
+  .wrap{width:100%; padding:12px 32px; display:grid; grid-template-columns:1.05fr .95fr; gap:28px; align-items:start}
+  .side{display:flex; flex-direction:column; gap:16px; min-width:0}
   @media (max-width:900px){ .wrap{grid-template-columns:1fr; padding:20px 16px} header{padding:16px} }
   .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px}
   .card h2{margin:0 0 8px; font-size:18px; font-weight:650; letter-spacing:-0.02em}
   .card p.sub{margin:0 0 8px; color:#CCCEEF; font-size:14px; max-width:62ch}
-  label{display:block; font-size:13px; color:#CCCEEF; margin:18px 0 6px; font-weight:600}
+  label{display:block; font-size:13px; color:#CCCEEF; margin:10px 0 4px; font-weight:600}
   input[type=text],input[type=number],input[type=datetime-local]{
     width:100%; background:#14152C; border:1px solid var(--line); color:#CCCEEF;
     border-radius:10px; padding:12px 13px; font:15px/1.4 Inter,sans-serif; outline:none;
@@ -77,7 +78,7 @@
   }
   .summary{background:transparent; border:none; padding:0; animation:none}
   .gift{border-radius:28px; border:10px solid #5B4BFF; background:#fff; color:#14152C;
-    padding:26px 22px 22px; text-align:center; max-width:460px;
+    padding:16px 18px 14px; text-align:center; max-width:460px;
     box-shadow:0 18px 32px rgba(0,0,0,.35)}
   .gift .orbit{width:180px; height:180px; display:block; margin:0 auto}
   .gift .word{margin-top:2px; font:800 26px/1 Inter,sans-serif; letter-spacing:.04em; color:#14152C}
@@ -85,12 +86,12 @@
   .gift .amt small{font-size:14px; font-weight:650; margin-left:6px; letter-spacing:0; color:#14152C}
   .gift .msg{margin:8px auto 0; font-size:15px; color:#14152C; max-width:32ch}
   .gift .msg:empty{display:none}
-  .line{display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--line)}
+  .line{display:flex; justify-content:space-between; gap:16px; padding:6px 0; border-bottom:1px solid var(--line)}
   .line span:first-child{color:#CCCEEF}
-  .line.total{font-weight:700; border-bottom:none; padding-top:16px}
+  .line.total{font-weight:700; border-bottom:none; padding-top:8px}
   .line.total span:last-child{color:#EE11FB; font-size:18px}
   .note{font-size:13px; color:#CCCEEF; margin-top:6px; max-width:62ch}
-  .warn{border:1px solid #DD00AC; color:#CCCEEF; border-radius:12px; padding:14px 16px; font-size:14px; margin-top:18px}
+  .warn{border:1px solid #DD00AC; color:#CCCEEF; border-radius:12px; padding:10px 14px; font-size:14px; margin-top:10px}
   .warn b{color:#EE11FB}
   .status{margin-top:14px; font-size:14px; color:#CCCEEF; min-height:20px}
   .status:empty{display:none}
@@ -103,17 +104,11 @@
   .linkfield input{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:13px}
   .pill{display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 8px; font-size:12px; font-weight:600}
   code{background:#14152C; padding:1px 6px; border-radius:6px; font-size:12.5px}
-  .howlink{display:block; margin:16px 32px 0; color:#fff; font-weight:650; font-size:15px; text-decoration:underline; text-underline-offset:3px}
-  .howlink:hover{color:#CCCEEF}
-  @media (max-width:900px){ .howlink{margin:12px 16px 0} }
-  #instructions{scroll-margin-top:16px}
-  .legal{max-width:760px; margin:4px auto 28px; padding:0 32px; color:#CCCEEF; font-size:13px; line-height:1.5}
-  .legal summary{cursor:pointer; font-weight:650; color:#CCCEEF}
-  .legal summary:focus-visible{outline:2px solid #5B4BFF; outline-offset:3px}
-  .legal h2{margin:14px 0 6px; font-size:13px; font-weight:650; letter-spacing:0}
+  .legal{margin:0; padding:0; color:#CCCEEF; font-size:13px; line-height:1.4}
+  .legal h2{margin:0 0 6px; font-size:15px; font-weight:650; color:#fff; letter-spacing:0}
+  .legal h3{margin:10px 0 4px; font-size:13px; font-weight:650; letter-spacing:0; color:#CCCEEF}
   .legal ul{margin:0; padding-left:1.15em}
   .legal p{margin:0}
-  @media (max-width:900px){ .legal{padding:0 16px; margin-bottom:20px} }
 </style>
 </head>
 <body>
@@ -137,8 +132,6 @@
   </div>
 </header>
 
-<a class="howlink" href="#instructions" id="toInstructions">How this works, and the limits</a>
-
 <div id="linkbox" class="linkbox">
   <h2 style="margin-top:0">Your gift link</h2>
   <p class="sub">Copy this and email it yourself. We do not store or send it.</p>
@@ -150,6 +143,7 @@
 </div>
 
 <div class="wrap">
+  <div class="side">
   <!-- LEFT: the form -->
   <div class="card">
     <h2>Gift details</h2>
@@ -167,6 +161,22 @@
     <div class="note">The note rides inside the link, not on any server.</div>
 
     <div id="status" class="status"></div>
+  </div>
+
+  <section class="legal" id="instructions">
+    <h2>How this works, and the limits</h2>
+    <h3>Instructions</h3>
+    <ul>
+      <li>You send the link yourself. The app never sees your email or the gift code.</li>
+      <li>Anyone who opens the link can claim the card. Keep amounts small.</li>
+      <li>After the end date the card can only be returned to the sender. Early cancel is possible only before it is claimed.</li>
+      <li>The recipient needs an address they control, or must save a page-generated key before the coins move.</li>
+    </ul>
+    <h3>Privacy</h3>
+    <p>We keep no personal information. No accounts, no database, and no copy of your email, the gift code, or your visit. The one-time key lives only in the link you send. A hosted helper may submit the redeem for you and sees only what is needed to do that. It stores nothing.</p>
+    <h3>Disclaimer</h3>
+    <p>This is a free, no-custody tool. The app owner never holds the funds and charges no fee. You are responsible for the wallet you use, the link you send, and the amount you lock. No warranty. Use at your own risk. Not financial advice. Lost keys or shared links cannot be recovered by the app.</p>
+  </section>
   </div>
 
   <div class="summary">
@@ -191,7 +201,7 @@
       <div class="amt" id="previewAmt">0 <small>LCAI</small></div>
       <div class="msg" id="previewMsg"></div>
     </div>
-    <h2 style="margin-top:22px">What gets locked</h2>
+    <h2 style="margin-top:10px">What gets locked</h2>
     <p class="sub">The gift and the gas cushion are two separate numbers.</p>
 
     <div class="line"><span>Gift amount</span><span id="sumGift">—</span></div>
@@ -203,7 +213,7 @@
     <input id="cushion" type="number" min="0" step="any" placeholder="0.0" />
     <div class="note">Pays the gas when the gift is redeemed. Leftover goes to the recipient.</div>
 
-    <div class="line total" style="margin-top:14px"><span>Total you lock</span><span id="sumTotal">—</span></div>
+    <div class="line total" style="margin-top:8px"><span>Total you lock</span><span id="sumTotal">—</span></div>
 
     <div class="warn">
       <b>Before you send:</b> anyone who can open the link can claim this gift. Send it only to the
@@ -212,21 +222,6 @@
     </div>
   </div>
 </div>
-
-<details class="legal" id="instructions">
-  <summary>How this works, and the limits</summary>
-  <h2>Instructions</h2>
-  <ul>
-    <li>You send the link yourself. The app never sees your email or the gift code.</li>
-    <li>Anyone who opens the link can claim the card. Keep amounts small.</li>
-    <li>After the end date the card can only be returned to the sender. Early cancel is possible only before it is claimed.</li>
-    <li>The recipient needs an address they control, or must save a page-generated key before the coins move.</li>
-  </ul>
-  <h2>Privacy</h2>
-  <p>We keep no personal information. No accounts, no database, and no copy of your email, the gift code, or your visit. The one-time key lives only in the link you send. A hosted helper may submit the redeem for you and sees only what is needed to do that. It stores nothing.</p>
-  <h2>Disclaimer</h2>
-  <p>This is a free, no-custody tool. The app owner never holds the funds and charges no fee. You are responsible for the wallet you use, the link you send, and the amount you lock. No warranty. Use at your own risk. Not financial advice. Lost keys or shared links cannot be recovered by the app.</p>
-</details>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
 <script>
@@ -399,24 +394,6 @@ $("connectBtn").onclick = ()=>{ if(connected) createCard(); else connect(); };
 $("disconnectBtn").onclick = disconnect;
 $("copyBtn").onclick = async ()=>{ try{ await navigator.clipboard.writeText($("link").value); $("copyBtn").textContent="Copied"; setTimeout(()=>$("copyBtn").textContent="Copy",1500);}catch{} };
 updateSummary();
-</script>
-<script>
-(function(){
-  var link = document.getElementById("toInstructions");
-  var box = document.getElementById("instructions");
-  if(!link || !box) return;
-  function show(){
-    box.open = true;
-    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    box.scrollIntoView({behavior: reduce ? "auto" : "smooth", block: "start"});
-  }
-  link.addEventListener("click", function(e){
-    e.preventDefault();
-    show();
-    if(history.replaceState) history.replaceState(null, "", "#instructions");
-  });
-  if(location.hash === "#instructions") show();
-})();
 </script>
 </body>
 </html>
