@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="no-referrer" />
+<title>LCAI Gift Card — card status</title>
+<style>
+  @font-face{
+    font-family:Inter;
+    src:url("brand/Inter-Variable.ttf") format("truetype");
+    font-weight:100 900;
+    font-style:normal;
+    font-display:swap;
+  }
+  :root{ --line:rgba(204,206,239,.28); --panel:rgba(204,206,239,.06); }
+  *{box-sizing:border-box}
+  ::selection{background:#5B4BFF; color:#fff}
+  html{scrollbar-color:#5B4BFF #14152C}
+  *::-webkit-scrollbar{width:11px; height:11px}
+  *::-webkit-scrollbar-thumb{background:#5B4BFF; border-radius:8px; border:2px solid #14152C}
+  *::-webkit-scrollbar-track{background:#14152C}
+  input{caret-color:#EE11FB}
+  :focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
+  body{margin:0; background:#14152C; color:#CCCEEF; font:15px/1.5 Inter,sans-serif; min-height:100vh}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  header{padding:18px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px}
+  .mark{width:36px; height:36px; flex:none; display:block}
+  header h1{font-size:18px; margin:0; font-weight:650; letter-spacing:-0.02em; white-space:nowrap}
+  header > div{flex:none}
+  header .tag{color:#CCCEEF; font-size:13px}
+  .wrap{width:100%; max-width:720px; margin:0 auto; padding:28px 32px}
+  @media (max-width:640px){ .wrap,header{padding-left:16px; padding-right:16px} .row{flex-direction:column} }
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px}
+  .card h2{margin:0 0 8px; font-size:18px; font-weight:650; letter-spacing:-0.02em}
+  .card p.sub{margin:0 0 16px; color:#CCCEEF; font-size:14px; max-width:62ch}
+  label{display:block; font-size:13px; color:#CCCEEF; margin:0 0 6px; font-weight:600}
+  .row{display:flex; gap:10px}
+  input[type=text]{
+    flex:1; background:#14152C; border:1px solid var(--line); color:#CCCEEF;
+    border-radius:10px; padding:12px 13px; font:14px/1.4 ui-monospace,Menlo,monospace; outline:none;
+  }
+  input:focus{border-color:#5B4BFF}
+  .btn{display:inline-flex; align-items:center; justify-content:center;
+    background:#5B4BFF; color:#fff; border:none; border-radius:12px; padding:12px 18px;
+    font:700 15px/1 Inter,sans-serif; cursor:pointer; white-space:nowrap}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .result{display:none; margin-top:22px}
+  .result.show{display:block}
+  .badge{display:inline-block; border-radius:999px; padding:5px 13px; font-size:13px; font-weight:650; color:#CCCEEF; border:1px solid var(--line)}
+  .badge.funded{border-color:#5B4BFF}
+  .badge.expired{border-color:#DD00AC}
+  .badge.returned{border-color:#EE11FB}
+  .grid{margin-top:8px}
+  .field{display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--line)}
+  .field .k{font-size:13px; color:#CCCEEF; font-weight:600}
+  .field .v{font-size:14px; text-align:right; word-break:break-all; font-family:ui-monospace,Menlo,monospace}
+  .field .v.plain{font-family:Inter,sans-serif}
+  .status{margin-top:14px; font-size:14px; color:#CCCEEF; min-height:20px}
+  .status.err,.status.work{color:#EE11FB}
+  .note{font-size:13px; color:#CCCEEF; margin-top:16px; max-width:62ch}
+  .note b{font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <img class="mark" src="brand/symbol-light.svg" width="36" height="36" alt="Lightchain" />
+  <div>
+    <h1>LCAI Gift Card</h1>
+    <span class="tag">Card status</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Look up a card</h2>
+    <p class="sub">Paste a card id to see where it stands. This page only reads the chain — it never asks for the gift code.</p>
+
+    <label for="idIn">Card id (a public address)</label>
+    <div class="row">
+      <input id="idIn" type="text" placeholder="0x…" />
+      <button id="lookBtn" class="btn">Check status</button>
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="result" id="result">
+      <div id="badgeWrap"></div>
+      <div class="grid">
+        <div class="field"><div class="k">Gift amount</div><div class="v plain" id="amtEl">—</div></div>
+        <div class="field"><div class="k">Gas cushion</div><div class="v plain" id="cushEl">—</div></div>
+        <div class="field"><div class="k">End date</div><div class="v plain" id="endEl">—</div></div>
+        <div class="field"><div class="k">Sender</div><div class="v" id="senderEl">—</div></div>
+      </div>
+      <div class="note" id="explain"></div>
+    </div>
+
+    <div class="note">
+      <b>What the states mean.</b> Funded: locked and claimable. Claimed: already redeemed. Expired: past the end date, so it can only go back to the sender. Returned: sent back to the sender.
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+<script>
+/* ============================ CONFIG — fill at deploy ============================ */
+const CONFIG = {
+  CONTRACT_ADDRESS: "0xA4206a749e1E106F79F9dFEA0d89deB1F6909f8a",
+  RPC_URL: "https://rpc.mainnet.lightchain.ai"
+};
+const ABI = [
+  "function statusOf(address cardId) view returns (uint8 state, address sender, uint256 amount, uint256 cushion, uint64 endDate, bool expired)"
+];
+/* ================================================================================ */
+
+const $ = (id)=>document.getElementById(id);
+function setStatus(msg, kind){ const el=$("status"); el.textContent=msg||""; el.className="status"+(kind?" "+kind:""); }
+
+function badge(word){
+  const cls = ["funded","claimed","expired","returned"].includes(word) ? word : "none";
+  const label = { funded:"Funded", claimed:"Claimed", expired:"Expired", returned:"Returned", none:"No card found" }[cls];
+  return '<span class="badge '+cls+'">'+label+'</span>';
+}
+
+async function lookup(){
+  const id = $("idIn").value.trim();
+  $("result").classList.remove("show");
+  if(!ethers.isAddress(id)){ setStatus("That is not a valid card id. It should be a 0x address.","err"); return; }
+  if(!CONFIG.RPC_URL){ setStatus("Status lookup is unavailable until deploy settings are filled.","err"); return; }
+  try{
+    setStatus("Reading the chain…","work");
+    const ro = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
+    const c = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, ro);
+    const r = await c.statusOf(id);
+    const state = Number(r[0]); const sender = r[1]; const amount = r[2]; const cushion = r[3];
+    const endDate = Number(r[4]); const expired = r[5];
+
+    if(state === 0){
+      $("badgeWrap").innerHTML = badge("none");
+      $("amtEl").textContent = "—"; $("cushEl").textContent = "—"; $("endEl").textContent = "—"; $("senderEl").textContent = "—";
+      $("explain").textContent = "No gift has ever been created for this card id.";
+      $("result").classList.add("show"); setStatus("");
+      return;
+    }
+
+    let word = state===1 ? (expired ? "expired" : "funded") : state===2 ? "claimed" : state===3 ? "returned" : "none";
+    $("badgeWrap").innerHTML = badge(word);
+    $("amtEl").textContent = ethers.formatEther(amount) + " LCAI";
+    $("cushEl").textContent = ethers.formatEther(cushion) + " LCAI";
+    $("endEl").textContent = new Date(endDate*1000).toLocaleString();
+    $("senderEl").textContent = sender;
+
+    const when = new Date(endDate*1000).toLocaleString();
+    $("explain").textContent =
+      word==="funded"   ? "Locked and claimable until " + when + "." :
+      word==="expired"  ? "Past its end date (" + when + "). It can only be returned to the sender now." :
+      word==="claimed"  ? "This gift has already been redeemed." :
+      word==="returned" ? "This gift was sent back to the sender." : "";
+    $("result").classList.add("show"); setStatus("");
+  }catch(e){
+    setStatus("Could not read the card. Check the id and your connection.","err");
+  }
+}
+
+$("lookBtn").addEventListener("click", lookup);
+$("idIn").addEventListener("keydown",(e)=>{ if(e.key==="Enter") lookup(); });
+
+// allow a ?id=0x… query (public address only — never the code)
+(function(){
+  const q = new URLSearchParams(location.search).get("id");
+  if(q && ethers.isAddress(q)){ $("idIn").value = q; lookup(); }
+})();
+</script>
+</body>
+</html>

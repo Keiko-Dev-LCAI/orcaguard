@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="no-referrer" />
+<title>Create an LCAI Gift Card</title>
+<style>
+  @font-face{
+    font-family:Inter;
+    src:url("brand/Inter-Variable.ttf") format("truetype");
+    font-weight:100 900;
+    font-style:normal;
+    font-display:swap;
+  }
+  :root{
+    --bg:#14152C; --text:#CCCEEF; --primary:#5B4BFF; --secondary:#DD00AC; --hot:#EE11FB;
+    --line:rgba(204,206,239,.28); --panel:rgba(204,206,239,.06); --radius:16px;
+  }
+  *{box-sizing:border-box}
+  ::selection{background:#5B4BFF; color:#fff}
+  html{scrollbar-color:#5B4BFF #14152C}
+  *::-webkit-scrollbar{width:11px; height:11px}
+  *::-webkit-scrollbar-thumb{background:#5B4BFF; border-radius:8px; border:2px solid #14152C}
+  *::-webkit-scrollbar-track{background:#14152C}
+  input{caret-color:#EE11FB}
+  :focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
+  body{
+    margin:0; background:#14152C; color:#CCCEEF;
+    font:15px/1.5 Inter,sans-serif; min-height:100vh;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+  .card{animation:rise .45s cubic-bezier(.16,1,.3,1) both}
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important; transition:none!important}
+    .gift{transform:none!important}
+  }
+  header{padding:18px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .mark{width:36px; height:36px; flex:none; display:block}
+  header h1{font-size:18px; margin:0; font-weight:650; letter-spacing:-0.02em; white-space:nowrap}
+  header .tag{color:#CCCEEF; font-size:13px}
+  header nav{margin-left:8px}
+  header nav a{color:#CCCEEF; font-size:13px; font-weight:600; white-space:nowrap}
+  header > div{flex:none}
+  .wrap{width:100%; padding:28px 32px; display:grid; grid-template-columns:1.05fr .95fr; gap:36px; align-items:start}
+  @media (max-width:900px){ .wrap{grid-template-columns:1fr; padding:20px 16px} header{padding:16px} }
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px}
+  .card h2{margin:0 0 8px; font-size:18px; font-weight:650; letter-spacing:-0.02em}
+  .card p.sub{margin:0 0 8px; color:#CCCEEF; font-size:14px; max-width:62ch}
+  label{display:block; font-size:13px; color:#CCCEEF; margin:18px 0 6px; font-weight:600}
+  input[type=text],input[type=number],input[type=datetime-local]{
+    width:100%; background:#14152C; border:1px solid var(--line); color:#CCCEEF;
+    border-radius:10px; padding:12px 13px; font:15px/1.4 Inter,sans-serif; outline:none;
+  }
+  input:focus{border-color:#5B4BFF}
+  .faces{display:flex; flex-wrap:wrap; gap:12px; margin-top:6px}
+  button.face{width:68px; height:68px; border-radius:14px; border:1px solid var(--line); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; background:#14152C; padding:8px;
+    box-shadow:0 8px 16px rgba(0,0,0,.35)}
+  button.face svg{width:44px; height:44px; display:block}
+  button.face.sel{border-color:#5B4BFF; box-shadow:0 10px 18px rgba(0,0,0,.45)}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background:#5B4BFF; color:#fff; border:none; border-radius:12px; padding:13px 18px;
+    font:700 15px/1 Inter,sans-serif; cursor:pointer; width:100%; margin-top:20px;
+    box-shadow:0 8px 16px rgba(0,0,0,.35); transition:transform .18s ease}
+  .btn:hover:not(:disabled){transform:translateY(-1px)}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .btn.secondary{background:transparent; color:#CCCEEF; border:1px solid var(--line); box-shadow:none}
+  .btn.secondary:hover:not(:disabled){border-color:#5B4BFF}
+  .btn.connect{width:auto; margin:0 0 0 auto; padding:10px 16px; flex:none}
+  @media (max-width:700px){ .btn.connect{flex:1 0 100%; width:100%; margin:8px 0 0} }
+  .summary{background:transparent; border:none; padding:0; animation:none}
+  .gift{border-radius:22px; padding:26px 22px 22px; min-height:210px; position:relative; overflow:hidden;
+    background:#14152C; box-shadow:0 18px 32px rgba(0,0,0,.45);
+    transform:perspective(800px) rotateX(7deg); transform-origin:center bottom;
+    transition:transform .25s ease}
+  .gift::after{content:""; position:absolute; inset:0; border-radius:inherit; padding:2px; pointer-events:none;
+    background:linear-gradient(135deg,#5B4BFF,#EE11FB);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude}
+  .gift:hover{transform:perspective(800px) rotateX(0deg) translateY(-6px)}
+  .gift .face{width:64px; height:64px}
+  .gift .face svg{width:64px; height:64px}
+  .gift .amt{font-size:36px; font-weight:700; letter-spacing:-0.03em; margin-top:12px; color:#CCCEEF}
+  .gift .amt small{font-size:16px; font-weight:600; margin-left:6px; color:#EE11FB}
+  .gift .msg{margin-top:8px; font-size:15px; color:#CCCEEF; max-width:36ch}
+  .line{display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--line)}
+  .line span:first-child{color:#CCCEEF}
+  .line.total{font-weight:700; border-bottom:none; padding-top:16px}
+  .line.total span:last-child{color:#EE11FB; font-size:18px}
+  .note{font-size:13px; color:#CCCEEF; margin-top:6px; max-width:62ch}
+  .warn{border:1px solid #DD00AC; color:#CCCEEF; border-radius:12px; padding:14px 16px; font-size:14px; margin-top:18px}
+  .warn b{color:#EE11FB}
+  .status{margin-top:14px; font-size:14px; color:#CCCEEF; min-height:20px}
+  .status.err{color:#EE11FB}
+  .status.ok{color:#EE11FB}
+  .linkbox{display:none; margin-top:18px}
+  .linkbox.show{display:block}
+  .linkfield{display:flex; gap:10px; margin-top:8px}
+  .linkfield input{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:13px}
+  .pill{display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 8px; font-size:12px; font-weight:600}
+  code{background:#14152C; padding:1px 6px; border-radius:6px; font-size:12.5px}
+</style>
+</head>
+<body>
+<header>
+  <img class="mark" src="brand/symbol-light.svg" width="36" height="36" alt="Lightchain" />
+  <div>
+    <h1>LCAI Gift Card</h1>
+    <span class="tag">Create a card</span>
+  </div>
+  <nav><a href="status.html">Card status</a></nav>
+  <button id="connectBtn" class="btn secondary connect">Connect wallet</button>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: the form -->
+  <div class="card">
+    <h2>Gift details</h2>
+    <p class="sub">The gift locks in the contract. The app never sees an email, a code, or a wallet.</p>
+
+    <label for="amount">Gift amount (LCAI)</label>
+    <input id="amount" type="number" min="0" step="any" placeholder="100" />
+
+    <label for="end">Expires on</label>
+    <input id="end" type="datetime-local" />
+    <div class="note">After this date, the card can only be sent back to you. You pick the date.</div>
+
+    <label>Card face</label>
+    <div class="faces" id="faces"></div>
+
+    <label for="noteIn">Short note (optional)</label>
+    <input id="noteIn" type="text" maxlength="120" placeholder="Happy birthday!" />
+    <div class="note">The note rides inside the link, not on any server.</div>
+
+    <button id="createBtn" class="btn" disabled>Connect a wallet to start</button>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div class="summary">
+    <div class="gift" id="preview">
+      <div class="face" id="previewFace"></div>
+      <div class="amt" id="previewAmt">— <small>LCAI</small></div>
+      <div class="msg" id="previewMsg"></div>
+    </div>
+    <h2 style="margin-top:22px">What gets locked</h2>
+    <p class="sub">The gift and the gas cushion are two separate numbers.</p>
+
+    <div class="line"><span>Gift amount</span><span id="sumGift">—</span></div>
+    <div class="line">
+      <span>Gas cushion <span class="pill" id="cushionPill">auto</span></span>
+      <span id="sumCushion">—</span>
+    </div>
+    <label for="cushion">Cushion (LCAI) — estimated from current gas, adjustable</label>
+    <input id="cushion" type="number" min="0" step="any" placeholder="0.0" />
+    <div class="note">Pays the gas when the gift is redeemed. Leftover goes to the recipient.</div>
+
+    <div class="line total" style="margin-top:14px"><span>Total you lock</span><span id="sumTotal">—</span></div>
+
+    <div class="warn">
+      <b>Before you send:</b> anyone who can open the link can claim this gift. Send it only to the
+      person you mean to, and keep gift cards small. There is no way to take it back once it is claimed
+      (only before, via early cancel).
+    </div>
+
+    <div id="linkbox" class="linkbox">
+      <h2 style="margin-top:6px">Your gift link</h2>
+      <p class="sub">Copy this and email it yourself. We do not store or send it.</p>
+      <div class="linkfield">
+        <input id="link" type="text" readonly />
+        <button id="copyBtn" class="btn secondary" style="width:auto; margin:0">Copy</button>
+      </div>
+      <div class="note" id="cardIdNote"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+<script>
+/* ============================ CONFIG — fill at deploy ============================ */
+const CONFIG = {
+  CHAIN_ID: 9200,                      // Lightchain mainnet
+  CHAIN_ID_HEX: "0x23f0",
+  CONTRACT_ADDRESS: "0xA4206a749e1E106F79F9dFEA0d89deB1F6909f8a",
+  REDEEM_URL: "https://orcaguard.win/gift/redeem.html",           // hosted redeem page
+  // Only used if the wallet does not already have Lightchain mainnet added:
+  CHAIN_PARAMS: {
+    chainId: "0x23f0",
+    chainName: "Lightchain Mainnet",
+    nativeCurrency: { name: "LCAI", symbol: "LCAI", decimals: 18 },
+    rpcUrls: ["https://rpc.mainnet.lightchain.ai"],
+    blockExplorerUrls: ["https://mainnet.lightscan.app"]
+  }
+};
+const CLAIM_GAS_ESTIMATE = 120000n;   // rough gas for a claim; cushion = gasPrice * this * safety
+const CUSHION_SAFETY = 15n;           // x1.5  (divided by 10 below)
+
+const ABI = ["function create(address cardId, uint256 amount, uint64 endDate) payable"];
+
+const FACES = [
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 28h40v24a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V28z" fill="#5B4BFF"/><path d="M12 28 18 18h28l6 10" fill="#EE11FB"/><rect x="8" y="24" width="48" height="8" rx="2" fill="#DD00AC"/><rect x="29" y="18" width="6" height="38" fill="#CCCEEF"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4 37 24 58 18 42 32 58 46 37 40 32 60 27 40 6 46 22 32 6 18 27 24Z" fill="#5B4BFF"/><circle cx="32" cy="32" r="6" fill="#EE11FB"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 30c8-16 28-10 20 2-6 8-20 10-20 10S18 40 12 32C4 20 24 14 32 30z" fill="#DD00AC"/><path d="M32 30c-8-16-28-10-20 2 6 8 20 10 20 10s14-2 20-10c8-12-12-18-20-2z" fill="#5B4BFF"/><circle cx="32" cy="34" r="5" fill="#EE11FB"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54 10 32c-6-8-2-18 8-18 6 0 10 4 14 10 4-6 8-10 14-10 10 0 14 10 8 18L32 54z" fill="#DD00AC"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="m32 6 6 18h18l-14 11 5 18-15-11-15 11 5-18L8 24h18z" fill="#5B4BFF"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 54 32 32 58 10 32Z" fill="#5B4BFF"/><path d="M32 16 46 32 32 48 18 32Z" fill="#EE11FB"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="8" fill="#EE11FB"/><path d="M32 6v12M32 46v12M6 32h12M46 32h12M13 13l8 8M43 43l8 8M51 13l-8 8M21 43l-8 8" stroke="#5B4BFF" stroke-width="4" stroke-linecap="round"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="#5B4BFF"/><circle cx="32" cy="32" r="14" fill="#14152C"/><path d="M32 22 35 30h8l-6 5 2 8-7-5-7 5 2-8-6-5h8z" fill="#EE11FB"/></svg>'
+];
+/* ================================================================================ */
+
+let provider, signer, connected = false, selectedFace = 0;
+
+const $ = (id) => document.getElementById(id);
+function setStatus(msg, kind){ const el=$("status"); el.textContent=msg||""; el.className="status"+(kind?" "+kind:""); }
+
+// build the face picker
+function paintPreview(){
+  $("previewFace").innerHTML = FACES[selectedFace];
+  const raw = ($("amount").value || "").trim();
+  $("previewAmt").innerHTML = (raw === "" ? "0" : raw) + " <small>LCAI</small>";
+  $("previewMsg").textContent = $("noteIn").value || "";
+}
+FACES.forEach((f,i)=>{
+  const d=document.createElement("button");
+  d.type = "button";
+  d.className="face"+(i===0?" sel":"");
+  d.setAttribute("aria-label", "Card face " + (i+1));
+  d.innerHTML=f;
+  d.onclick=()=>{ selectedFace=i; document.querySelectorAll("button.face").forEach((x,j)=>x.classList.toggle("sel",j===i)); paintPreview(); };
+  $("faces").appendChild(d);
+});
+
+// default expiry: 30 days out
+(function(){
+  const d=new Date(Date.now()+30*864e5); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  $("end").value=d.toISOString().slice(0,16);
+})();
+
+async function connect(){
+  if(!window.ethereum){ setStatus("No wallet found. Install a Lightchain-compatible wallet.","err"); return; }
+  provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  await ensureChain();
+  signer = await provider.getSigner();
+  connected = true;
+  const addr = await signer.getAddress();
+  $("connectBtn").textContent = addr.slice(0,6)+"…"+addr.slice(-4);
+  $("createBtn").disabled = false;
+  $("createBtn").textContent = "Lock the gift";
+  await refreshCushion();
+  setStatus("Wallet connected.","ok");
+}
+
+async function ensureChain(){
+  const net = await provider.getNetwork();
+  if(Number(net.chainId) === CONFIG.CHAIN_ID) return;
+  try{
+    await window.ethereum.request({ method:"wallet_switchEthereumChain", params:[{chainId:CONFIG.CHAIN_ID_HEX}] });
+  }catch(e){
+    if(e && e.code === 4902 && CONFIG.CHAIN_PARAMS.rpcUrls.length){
+      await window.ethereum.request({ method:"wallet_addEthereumChain", params:[CONFIG.CHAIN_PARAMS] });
+    }else{
+      throw new Error("Please switch your wallet to Lightchain mainnet (chain 9200).");
+    }
+  }
+  provider = new ethers.BrowserProvider(window.ethereum);
+}
+
+async function refreshCushion(){
+  try{
+    const fee = await provider.getFeeData();
+    const gp = fee.gasPrice ?? fee.maxFeePerGas ?? 0n;
+    const cushionWei = gp * CLAIM_GAS_ESTIMATE * CUSHION_SAFETY / 10n;
+    $("cushion").value = ethers.formatEther(cushionWei);
+  }catch(e){ /* leave blank for manual entry */ }
+  updateSummary();
+}
+
+function parseAmt(v){ try{ return ethers.parseEther((v||"0").toString()); }catch{ return 0n; } }
+
+function updateSummary(){
+  const gift = parseAmt($("amount").value);
+  const cushion = parseAmt($("cushion").value);
+  $("sumGift").textContent = ethers.formatEther(gift)+" LCAI";
+  $("sumCushion").textContent = ethers.formatEther(cushion)+" LCAI";
+  $("sumTotal").textContent = ethers.formatEther(gift+cushion)+" LCAI";
+  paintPreview();
+}
+["amount","cushion","noteIn"].forEach(id=>$(id).addEventListener("input",updateSummary));
+
+async function createCard(){
+  if(!connected){ await connect(); return; }
+  const gift = parseAmt($("amount").value);
+  const cushion = parseAmt($("cushion").value);
+  const endMs = new Date($("end").value).getTime();
+  if(gift <= 0n){ setStatus("Enter a gift amount.","err"); return; }
+  if(!endMs || endMs <= Date.now()){ setStatus("Pick an expiry date in the future.","err"); return; }
+  const endDate = BigInt(Math.floor(endMs/1000));
+
+  // 1) make the one-time key IN THE BROWSER. Its address is the card id.
+  const giftKey = ethers.Wallet.createRandom();
+  const cardId = giftKey.address;
+
+  try{
+    $("createBtn").disabled = true;
+    setStatus("Confirm the transaction in your wallet…");
+    const c = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, signer);
+    const tx = await c.create(cardId, gift, endDate, { value: gift + cushion });
+    setStatus("Locking the gift on-chain…");
+    await tx.wait();
+
+    // 2) build the link. Key + note + face ONLY after the # (never sent to a server).
+    const frag = new URLSearchParams();
+    frag.set("k", giftKey.privateKey);
+    if($("noteIn").value) frag.set("n", $("noteIn").value);
+    frag.set("f", String(selectedFace));
+    const link = CONFIG.REDEEM_URL + "#" + frag.toString();
+
+    $("link").value = link;
+    $("linkbox").classList.add("show");
+    $("cardIdNote").innerHTML = "Card id (public, for the status page): <code>"+cardId+"</code>";
+    setStatus("Gift locked. Copy the link and email it yourself.","ok");
+  }catch(e){
+    setStatus((e && (e.shortMessage||e.message)) || "Transaction failed.","err");
+  }finally{
+    $("createBtn").disabled = false;
+  }
+}
+
+$("connectBtn").onclick = connect;
+$("createBtn").onclick = createCard;
+$("copyBtn").onclick = async ()=>{ try{ await navigator.clipboard.writeText($("link").value); $("copyBtn").textContent="Copied"; setTimeout(()=>$("copyBtn").textContent="Copy",1500);}catch{} };
+updateSummary();
+</script>
+</body>
+</html>

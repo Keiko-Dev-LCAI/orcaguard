@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="no-referrer" />
+<title>Redeem your LCAI Gift Card</title>
+<style>
+  @font-face{
+    font-family:Inter;
+    src:url("brand/Inter-Variable.ttf") format("truetype");
+    font-weight:100 900;
+    font-style:normal;
+    font-display:swap;
+  }
+  :root{
+    --text:#CCCEEF; --line:rgba(204,206,239,.28); --panel:rgba(204,206,239,.06); --radius:16px;
+  }
+  *{box-sizing:border-box}
+  ::selection{background:#5B4BFF; color:#fff}
+  html{scrollbar-color:#5B4BFF #14152C}
+  *::-webkit-scrollbar{width:11px; height:11px}
+  *::-webkit-scrollbar-thumb{background:#5B4BFF; border-radius:8px; border:2px solid #14152C}
+  *::-webkit-scrollbar-track{background:#14152C}
+  input{caret-color:#EE11FB}
+  :focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
+  body{margin:0; background:#14152C; color:#CCCEEF; font:15px/1.5 Inter,sans-serif; min-height:100vh}
+  @keyframes rise{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+  .card{animation:rise .45s cubic-bezier(.16,1,.3,1) both}
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important; transition:none!important}
+    .gift{transform:none!important}
+  }
+  header{padding:18px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px}
+  .mark{width:36px; height:36px; flex:none; display:block}
+  header h1{font-size:18px; margin:0; font-weight:650; letter-spacing:-0.02em; white-space:nowrap}
+  header > div{flex:none}
+  header .tag{color:#CCCEEF; font-size:13px}
+  header nav{margin-left:auto}
+  header nav a{color:#CCCEEF; font-size:13px; font-weight:600}
+  .wrap{width:100%; padding:28px 32px; display:grid; grid-template-columns:.9fr 1.1fr; gap:36px; align-items:start}
+  @media (max-width:900px){ .wrap{grid-template-columns:1fr; padding:20px 16px} header{padding:16px} }
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px}
+  .stage{background:transparent; border:none; padding:0; animation:none}
+  .card h2{margin:0 0 8px; font-size:18px; font-weight:650; letter-spacing:-0.02em}
+  .card p.sub{margin:0 0 8px; color:#CCCEEF; font-size:14px; max-width:62ch}
+  label{display:block; font-size:13px; color:#CCCEEF; margin:18px 0 6px; font-weight:600}
+  input[type=text]{
+    width:100%; background:#14152C; border:1px solid var(--line); color:#CCCEEF;
+    border-radius:10px; padding:12px 13px; font:13px/1.4 ui-monospace,Menlo,monospace; outline:none;
+  }
+  input:focus{border-color:#5B4BFF}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background:#5B4BFF; color:#fff; border:none; border-radius:12px; padding:13px 18px;
+    font:700 15px/1 Inter,sans-serif; cursor:pointer; width:100%; margin-top:20px;
+    box-shadow:0 8px 16px rgba(0,0,0,.35); transition:transform .18s ease}
+  .btn:hover:not(:disabled){transform:translateY(-1px)}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .btn.secondary,.btn.ghost{background:transparent; color:#CCCEEF; border:1px solid var(--line); box-shadow:none; font-weight:650}
+  .btn.ghost{font-size:14px; padding:10px 14px; margin-top:12px}
+  .btn.secondary:hover:not(:disabled),.btn.ghost:hover:not(:disabled){border-color:#5B4BFF}
+  .gift{border-radius:22px; padding:28px 24px 64px; min-height:250px; position:relative; overflow:hidden;
+    background:#14152C; box-shadow:0 18px 32px rgba(0,0,0,.45);
+    transform:perspective(800px) rotateX(7deg); transform-origin:center bottom;
+    transition:transform .25s ease}
+  .gift::after{content:""; position:absolute; inset:0; border-radius:inherit; padding:2px; pointer-events:none;
+    background:linear-gradient(135deg,#5B4BFF,#EE11FB);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude}
+  .gift:hover{transform:perspective(800px) rotateX(0deg) translateY(-6px)}
+  .gift .face svg{width:64px; height:64px; display:block}
+  .gift .amt{font-size:40px; font-weight:700; letter-spacing:-0.03em; margin-top:14px; color:#CCCEEF}
+  .gift .amt small{font-size:16px; font-weight:600; margin-left:6px; color:#EE11FB}
+  .gift .msg{margin-top:12px; font-size:15px; color:#CCCEEF; max-width:36ch}
+  .gift .st{position:absolute; bottom:18px; left:24px}
+  .badge{display:inline-block; border-radius:999px; padding:4px 11px; font-size:12px; font-weight:650; color:#CCCEEF; border:1px solid var(--line)}
+  .badge.funded{border-color:#5B4BFF}
+  .badge.expired{border-color:#DD00AC}
+  .badge.returned{border-color:#EE11FB}
+  .seg{display:flex; gap:8px; background:#14152C; border:1px solid var(--line); border-radius:12px; padding:5px; margin-top:8px}
+  .seg button{flex:1; background:transparent; border:none; color:#CCCEEF; padding:10px; border-radius:9px; cursor:pointer; font:600 14px/1.3 Inter,sans-serif}
+  .seg button.sel{background:#5B4BFF; color:#fff}
+  .pane{display:none; margin-top:4px}
+  .pane.show{display:block}
+  .note,.small{font-size:13px; color:#CCCEEF; margin-top:6px; max-width:62ch}
+  .warn,.danger{border:1px solid #DD00AC; color:#CCCEEF; border-radius:12px; padding:14px 16px; font-size:14px; margin-top:16px}
+  .danger{border-color:#EE11FB}
+  .warn b,.danger b{color:#EE11FB}
+  .keybox{background:#14152C; border:1px solid var(--line); border-radius:11px; padding:13px; margin-top:12px;
+    font-family:ui-monospace,Menlo,monospace; font-size:12.5px; word-break:break-all; color:#CCCEEF}
+  .gate{display:flex; align-items:flex-start; gap:10px; margin-top:14px; font-size:14px; color:#CCCEEF}
+  .gate input{margin-top:3px; accent-color:#5B4BFF}
+  .status{margin-top:14px; font-size:14px; color:#CCCEEF; min-height:20px}
+  .status.err,.status.ok,.status.work{color:#EE11FB}
+  code{background:#14152C; padding:1px 6px; border-radius:6px; font-size:12.5px}
+  .hr{height:1px; background:var(--line); margin:22px 0}
+</style>
+</head>
+<body>
+<header>
+  <img class="mark" src="brand/symbol-light.svg" width="36" height="36" alt="Lightchain" />
+  <div>
+    <h1>LCAI Gift Card</h1>
+    <span class="tag">Redeem</span>
+  </div>
+  <nav><a href="status.html">Card status</a></nav>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: the card face -->
+  <div class="stage">
+    <div class="gift" id="giftCard">
+      <div class="face" id="faceEl"></div>
+      <div class="amt" id="amtEl">— <small>LCAI</small></div>
+      <div class="msg" id="msgEl"></div>
+      <div class="st"><span class="badge funded" id="badgeEl">loading…</span></div>
+    </div>
+    <div class="small" id="cardMeta" style="margin-top:14px"></div>
+  </div>
+
+  <!-- RIGHT: the redeem flow -->
+  <div class="card">
+    <h2>Redeem this gift</h2>
+    <p class="sub">Choose where the LCAI should go. The gas to redeem comes from the cushion the sender locked.</p>
+
+    <div class="seg" id="seg">
+      <button data-mode="paste" class="sel">Paste an address I control</button>
+      <button data-mode="make">Make a new wallet for me</button>
+    </div>
+
+    <!-- PASTE pane -->
+    <div class="pane show" id="pastePane">
+      <label for="payoutIn">Your LCAI address</label>
+      <input id="payoutIn" type="text" placeholder="0x…" />
+      <div class="note">The coins go here. Use an address you already control on Lightchain mainnet.</div>
+    </div>
+
+    <!-- MAKE pane -->
+    <div class="pane" id="makePane">
+      <button id="genBtn" class="btn secondary" style="margin-top:14px">Generate a wallet</button>
+      <div id="genOut" style="display:none">
+        <label>Your new address</label>
+        <div class="keybox" id="newAddr"></div>
+        <label>Your private key — the ONLY copy</label>
+        <div class="keybox" id="newKey"></div>
+        <button id="dlBtn" class="btn ghost">Download a backup file</button>
+        <div class="danger">
+          <b>Save this key now.</b> It lives only in this page. If you close the tab without saving it,
+          the coins land in a wallet you can never open again. There is no reset.
+        </div>
+        <label class="gate">
+          <input type="checkbox" id="savedGate" />
+          <span>I have saved my private key somewhere safe. I understand it is the only copy.</span>
+        </label>
+      </div>
+    </div>
+
+    <button id="redeemBtn" class="btn" disabled>Redeem the gift</button>
+    <div class="status" id="status"></div>
+
+    <div class="hr"></div>
+    <p class="small"><b>Relayer down?</b> You can submit the redeem yourself from your own wallet when you have a little gas. The coins still go only to the address above.</p>
+    <button id="selfBtn" class="btn ghost" disabled>Submit it myself (I'll pay the gas)</button>
+    <div class="status" id="selfStatus"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+<script>
+/* ============================ CONFIG — fill at deploy ============================ */
+const CONFIG = {
+  CHAIN_ID: 9200,                      // Lightchain mainnet
+  CHAIN_ID_HEX: "0x23f0",
+  CONTRACT_ADDRESS: "0xA4206a749e1E106F79F9dFEA0d89deB1F6909f8a",
+  RPC_URL: "https://rpc.mainnet.lightchain.ai",
+  RELAYER_URL: "https://relayer-production-5ef7.up.railway.app/claim",
+  CHAIN_PARAMS: {
+    chainId: "0x23f0",
+    chainName: "Lightchain Mainnet",
+    nativeCurrency: { name: "LCAI", symbol: "LCAI", decimals: 18 },
+    rpcUrls: ["https://rpc.mainnet.lightchain.ai"],
+    blockExplorerUrls: ["https://mainnet.lightscan.app"]
+  }
+};
+
+const ABI = [
+  "function statusOf(address cardId) view returns (uint8 state, address sender, uint256 amount, uint256 cushion, uint64 endDate, bool expired)",
+  "function claim(address cardId, address payout, bytes signature)"
+];
+const FACES = [
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 28h40v24a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V28z" fill="#5B4BFF"/><path d="M12 28 18 18h28l6 10" fill="#EE11FB"/><rect x="8" y="24" width="48" height="8" rx="2" fill="#DD00AC"/><rect x="29" y="18" width="6" height="38" fill="#CCCEEF"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4 37 24 58 18 42 32 58 46 37 40 32 60 27 40 6 46 22 32 6 18 27 24Z" fill="#5B4BFF"/><circle cx="32" cy="32" r="6" fill="#EE11FB"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 30c8-16 28-10 20 2-6 8-20 10-20 10S18 40 12 32C4 20 24 14 32 30z" fill="#DD00AC"/><path d="M32 30c-8-16-28-10-20 2 6 8 20 10 20 10s14-2 20-10c8-12-12-18-20-2z" fill="#5B4BFF"/><circle cx="32" cy="34" r="5" fill="#EE11FB"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54 10 32c-6-8-2-18 8-18 6 0 10 4 14 10 4-6 8-10 14-10 10 0 14 10 8 18L32 54z" fill="#DD00AC"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="m32 6 6 18h18l-14 11 5 18-15-11-15 11 5-18L8 24h18z" fill="#5B4BFF"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 54 32 32 58 10 32Z" fill="#5B4BFF"/><path d="M32 16 46 32 32 48 18 32Z" fill="#EE11FB"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="8" fill="#EE11FB"/><path d="M32 6v12M32 46v12M6 32h12M46 32h12M13 13l8 8M43 43l8 8M51 13l-8 8M21 43l-8 8" stroke="#5B4BFF" stroke-width="4" stroke-linecap="round"/></svg>',
+  '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="#5B4BFF"/><circle cx="32" cy="32" r="14" fill="#14152C"/><path d="M32 22 35 30h8l-6 5 2 8-7-5-7 5 2-8-6-5h8z" fill="#EE11FB"/></svg>'
+];
+const STATE = ["none","funded","claimed","expired","returned"]; // display only
+/* ================================================================================ */
+
+const $ = (id) => document.getElementById(id);
+function setStatus(id, msg, kind){ const el=$(id); el.textContent=msg||""; el.className="status"+(kind?" "+kind:""); }
+
+// ---- read the gift key + note + face from the URL fragment (never sent to a server) ----
+let giftKey = null, cardId = null, note = "", faceIdx = 0;
+let gift = null;        // { state, amount, endDate, expired }
+let madeWallet = null;  // a page-generated wallet, if that path is used
+let mode = "paste";
+
+function parseFragment(){
+  const frag = new URLSearchParams(location.hash.slice(1));
+  const k = frag.get("k");
+  note = frag.get("n") || "";
+  faceIdx = Math.max(0, Math.min(FACES.length-1, parseInt(frag.get("f")||"0",10)||0));
+  if(!k){ return false; }
+  try{
+    giftKey = new ethers.Wallet(k);
+    cardId = giftKey.address;
+    return true;
+  }catch(e){ return false; }
+}
+
+function renderFace(){
+  $("faceEl").innerHTML = FACES[faceIdx] || FACES[0];
+  $("msgEl").textContent = note || "";
+}
+
+function setBadge(word){
+  const el=$("badgeEl");
+  el.textContent = word;
+  el.className = "badge " + (["funded","claimed","expired","returned"].includes(word) ? word : "funded");
+}
+
+async function loadCard(){
+  renderFace();
+  if(!giftKey){ setBadge("not a card"); $("cardMeta").textContent="This link has no gift code in it."; return; }
+  if(!CONFIG.RPC_URL){ setBadge("loading…"); $("cardMeta").textContent="Card status unavailable until deploy settings are filled."; return; }
+  try{
+    const ro = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
+    const c = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, ro);
+    const r = await c.statusOf(cardId);
+    const state = Number(r[0]); const amount = r[2]; const endDate = Number(r[4]); const expired = r[5];
+    gift = { state, amount, endDate, expired };
+    $("amtEl").innerHTML = ethers.formatEther(amount) + " <small>LCAI</small>";
+    const when = new Date(endDate*1000).toLocaleString();
+    if(state === 1 && !expired){ setBadge("funded"); $("cardMeta").textContent = "Claimable until " + when + "."; enableRedeem(); }
+    else if(state === 1 && expired){ setBadge("expired"); $("cardMeta").textContent = "Expired on " + when + ". It can only go back to the sender now."; }
+    else if(state === 2){ setBadge("claimed"); $("cardMeta").textContent = "Already redeemed."; }
+    else if(state === 3){ setBadge("returned"); $("cardMeta").textContent = "Returned to the sender."; }
+    else { setBadge("not a card"); $("cardMeta").textContent = "No gift found for this link."; }
+  }catch(e){
+    setBadge("loading…"); $("cardMeta").textContent = "Could not read the card status. Check your connection.";
+  }
+}
+
+function enableRedeem(){ refreshButtons(); }
+
+// ---- mode toggle ----
+$("seg").addEventListener("click",(e)=>{
+  const b = e.target.closest("button"); if(!b) return;
+  mode = b.dataset.mode;
+  document.querySelectorAll("#seg button").forEach(x=>x.classList.toggle("sel", x===b));
+  $("pastePane").classList.toggle("show", mode==="paste");
+  $("makePane").classList.toggle("show", mode==="make");
+  refreshButtons();
+});
+
+$("payoutIn").addEventListener("input", refreshButtons);
+$("savedGate")?.addEventListener("change", refreshButtons);
+
+// ---- generate a page wallet (optional path) ----
+$("genBtn").addEventListener("click", ()=>{
+  madeWallet = ethers.Wallet.createRandom();
+  $("newAddr").textContent = madeWallet.address;
+  $("newKey").textContent = madeWallet.privateKey;
+  $("genOut").style.display = "block";
+  $("savedGate").checked = false;
+  refreshButtons();
+});
+$("dlBtn").addEventListener("click", ()=>{
+  if(!madeWallet) return;
+  const body = "LCAI wallet backup\nKEEP THIS PRIVATE\n\nAddress: "+madeWallet.address+"\nPrivate key: "+madeWallet.privateKey+"\n\nImport this key into any Lightchain-compatible wallet to spend your gift.\n";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([body], {type:"text/plain"}));
+  a.download = "lcai-wallet-backup.txt";
+  a.click();
+});
+
+// which payout address is active, and is the gate satisfied?
+function currentPayout(){
+  if(mode === "paste"){
+    const v = $("payoutIn").value.trim();
+    return ethers.isAddress(v) ? v : null;
+  } else {
+    if(!madeWallet) return null;
+    if(!$("savedGate").checked) return null;   // HARD gate: no coins move until the key is saved
+    return madeWallet.address;
+  }
+}
+
+function refreshButtons(){
+  const ready = gift && gift.state === 1 && !gift.expired && currentPayout();
+  $("redeemBtn").disabled = !ready || !CONFIG.RELAYER_URL;
+  $("redeemBtn").textContent = CONFIG.RELAYER_URL ? "Redeem the gift" : "Redeem (relayer offline — use self-submit below)";
+  $("selfBtn").disabled = !ready;
+}
+
+// ---- build the signed claim (the one-time key signs the exact payout) ----
+async function buildSignature(payout){
+  const inner = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ["address","uint256","address","address"],
+      [CONFIG.CONTRACT_ADDRESS, BigInt(CONFIG.CHAIN_ID), cardId, payout]
+    )
+  );
+  // signMessage adds the "\x19Ethereum Signed Message:\n32" prefix the contract expects
+  return await giftKey.signMessage(ethers.getBytes(inner));
+}
+
+// ---- path 1: hand the signed claim to the hosted relayer ----
+$("redeemBtn").addEventListener("click", async ()=>{
+  const payout = currentPayout();
+  if(!payout){ setStatus("status","Enter where the coins should go first.","err"); return; }
+  if(!CONFIG.RELAYER_URL){ setStatus("status","The relayer is offline. Use self-submit below.","err"); return; }
+  try{
+    setStatus("status","Signing the claim…","work");
+    const signature = await buildSignature(payout);
+    setStatus("status","Sending to the relayer…","work");
+    const res = await fetch(CONFIG.RELAYER_URL, {
+      method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify({ cardId, payout, signature })
+    });
+    if(!res.ok) throw new Error("relayer said no ("+res.status+")");
+    setStatus("status","Done. The coins are on the way to "+payout.slice(0,6)+"…"+payout.slice(-4)+".","ok");
+    $("redeemBtn").disabled = true; $("selfBtn").disabled = true;
+  }catch(e){
+    setStatus("status","Relayer failed: "+(e.message||e)+". Try self-submit below.","err");
+  }
+});
+
+// ---- path 2: recipient submits the same signed claim from their own wallet ----
+$("selfBtn").addEventListener("click", async ()=>{
+  const payout = currentPayout();
+  if(!payout){ setStatus("selfStatus","Enter where the coins should go first.","err"); return; }
+  if(!window.ethereum){ setStatus("selfStatus","No wallet found to submit with.","err"); return; }
+  try{
+    setStatus("selfStatus","Signing the claim…","work");
+    const signature = await buildSignature(payout);
+    const bp = new ethers.BrowserProvider(window.ethereum);
+    await bp.send("eth_requestAccounts", []);
+    const net = await bp.getNetwork();
+    if(Number(net.chainId) !== CONFIG.CHAIN_ID){
+      try{ await window.ethereum.request({ method:"wallet_switchEthereumChain", params:[{chainId:CONFIG.CHAIN_ID_HEX}] }); }
+      catch(e){ throw new Error("Switch your wallet to Lightchain mainnet (chain 9200)."); }
+    }
+    const s = await bp.getSigner();
+    const c = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, s);
+    setStatus("selfStatus","Submitting from your wallet…","work");
+    const tx = await c.claim(cardId, payout, signature);
+    await tx.wait();
+    setStatus("selfStatus","Done. The coins are in "+payout.slice(0,6)+"…"+payout.slice(-4)+". Your gas comes back from the cushion.","ok");
+    $("redeemBtn").disabled = true; $("selfBtn").disabled = true;
+  }catch(e){
+    setStatus("selfStatus","Could not submit: "+(e.message||e),"err");
+  }
+});
+
+// ---- boot ----
+parseFragment();
+loadCard();
+</script>
+</body>
+</html>
