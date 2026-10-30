@@ -39,8 +39,10 @@
   .mark{width:36px; height:36px; flex:none; display:block}
   header h1{font-size:18px; margin:0; font-weight:650; letter-spacing:-0.02em; white-space:nowrap}
   header .tag{color:#CCCEEF; font-size:13px}
-  header nav{margin-left:8px}
-  header nav a{color:#CCCEEF; font-size:13px; font-weight:600; white-space:nowrap}
+  header nav{margin-left:8px; display:flex; align-items:center; gap:8px}
+  header nav a{color:#CCCEEF; font-size:13px; font-weight:600; white-space:nowrap; text-decoration:none}
+  header nav a[aria-current="page"]{color:#fff}
+  header nav span{color:#CCCEEF; opacity:.45}
   header > div{flex:none}
   .wrap{width:100%; padding:28px 32px; display:grid; grid-template-columns:1.05fr .95fr; gap:36px; align-items:start}
   @media (max-width:900px){ .wrap{grid-template-columns:1fr; padding:20px 16px} header{padding:16px} }
@@ -125,7 +127,13 @@
     <h1>LCAI Gift Card</h1>
     <span class="tag">Create a card</span>
   </div>
-  <nav><a href="status.html">Card status</a></nav>
+  <nav>
+    <a href="create.html" aria-current="page">Create</a>
+    <span aria-hidden="true">|</span>
+    <a href="redeem.html">Redeem</a>
+    <span aria-hidden="true">|</span>
+    <a href="status.html">Status</a>
+  </nav>
   <div class="wallet">
     <button id="connectBtn" class="btn secondary connect" type="button">Connect wallet</button>
     <button id="disconnectBtn" class="btn secondary connect" type="button" hidden>Disconnect</button>

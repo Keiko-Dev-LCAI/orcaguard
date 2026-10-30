@@ -24,7 +24,11 @@
   :focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
   body{margin:0; background:#14152C; color:#CCCEEF; font:15px/1.5 Inter,sans-serif; min-height:100vh}
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
-  header{padding:18px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px}
+  header{padding:18px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  header nav{margin-left:8px; display:flex; align-items:center; gap:8px}
+  header nav a{color:#CCCEEF; font-size:13px; font-weight:600; white-space:nowrap; text-decoration:none}
+  header nav a[aria-current="page"]{color:#fff}
+  header nav span{color:#CCCEEF; opacity:.45}
   .mark{width:36px; height:36px; flex:none; display:block}
   header h1{font-size:18px; margin:0; font-weight:650; letter-spacing:-0.02em; white-space:nowrap}
   header > div{flex:none}
@@ -69,6 +73,13 @@
     <h1>LCAI Gift Card</h1>
     <span class="tag">Card status</span>
   </div>
+  <nav>
+    <a href="create.html">Create</a>
+    <span aria-hidden="true">|</span>
+    <a href="redeem.html">Redeem</a>
+    <span aria-hidden="true">|</span>
+    <a href="status.html" aria-current="page">Status</a>
+  </nav>
 </header>
 
 <div class="wrap">
