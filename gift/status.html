@@ -16,14 +16,14 @@
   :root{ --line:rgba(204,206,239,.28); --panel:rgba(204,206,239,.06); }
   *{box-sizing:border-box}
   ::selection{background:#5B4BFF; color:#fff}
-  html{scrollbar-color:#5B4BFF #14152C}
+  html{scrollbar-color:#5B4BFF #14152C; scroll-behavior:smooth}
   *::-webkit-scrollbar{width:11px; height:11px}
   *::-webkit-scrollbar-thumb{background:#5B4BFF; border-radius:8px; border:2px solid #14152C}
   *::-webkit-scrollbar-track{background:#14152C}
   input{caret-color:#EE11FB}
   :focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
   body{margin:0; background:#14152C; color:#CCCEEF; font:15px/1.5 Inter,sans-serif; min-height:100vh}
-  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important} html{scroll-behavior:auto}}
   header{padding:18px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
   header nav{margin-left:8px; display:flex; align-items:center; gap:8px}
   header nav a{color:#CCCEEF; font-size:13px; font-weight:600; white-space:nowrap; text-decoration:none}
@@ -64,6 +64,7 @@
   .status.err,.status.work{color:#EE11FB}
   .note{font-size:13px; color:#CCCEEF; margin-top:16px; max-width:62ch}
   .note b{font-weight:700}
+  #instructions{scroll-margin-top:16px}
   .legal{max-width:760px; margin:4px auto 28px; padding:0 32px; color:#CCCEEF; font-size:13px; line-height:1.5}
   .legal summary{cursor:pointer; font-weight:650; color:#CCCEEF}
   .legal summary:focus-visible{outline:2px solid #5B4BFF; outline-offset:3px}
@@ -86,6 +87,8 @@
     <a href="redeem.html">Redeem</a>
     <span aria-hidden="true">|</span>
     <a href="status.html" aria-current="page">Status</a>
+    <span aria-hidden="true">|</span>
+    <a href="#instructions" id="toInstructions">Instructions</a>
   </nav>
 </header>
 
@@ -118,7 +121,7 @@
   </div>
 </div>
 
-<details class="legal">
+<details class="legal" id="instructions">
   <summary>How this works, and the limits</summary>
   <h2>Instructions</h2>
   <ul>
@@ -201,6 +204,24 @@ $("idIn").addEventListener("keydown",(e)=>{ if(e.key==="Enter") lookup(); });
 (function(){
   const q = new URLSearchParams(location.search).get("id");
   if(q && ethers.isAddress(q)){ $("idIn").value = q; lookup(); }
+})();
+</script>
+<script>
+(function(){
+  var link = document.getElementById("toInstructions");
+  var box = document.getElementById("instructions");
+  if(!link || !box) return;
+  function show(){
+    box.open = true;
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    box.scrollIntoView({behavior: reduce ? "auto" : "smooth", block: "start"});
+  }
+  link.addEventListener("click", function(e){
+    e.preventDefault();
+    show();
+    if(history.replaceState) history.replaceState(null, "", "#instructions");
+  });
+  if(location.hash === "#instructions") show();
 })();
 </script>
 </body>
