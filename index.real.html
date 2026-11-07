@@ -1174,6 +1174,45 @@ async function pollJob(jobId, onDone, onError, maxWait = 360000) {
   onError(t('msg_poll_timeout'));
 }
 
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(function (b) {
+    return b.toString(16).padStart(2, '0');
+  }).join('');
+}
+
+async function signGuard(action, extra) {
+  if (!window.ethereum) throw new Error('Connect a wallet to run an AI check.');
+  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  const account = accounts && accounts[0];
+  if (!account) throw new Error('Connect a wallet to run an AI check.');
+  const wallet = account.toLowerCase();
+  const message = 'OrcaGuard|' + action + '|' + wallet + '|' + Math.floor(Date.now() / 1000) + '|' + extra;
+  const signature = await window.ethereum.request({
+    method: 'personal_sign',
+    params: [message, account]
+  });
+  return { wallet: wallet, auth_message: message, signature: signature };
+}
+
+async function postGuard(path, payload, action, extraText) {
+  async function once(body) {
+    const r = await fetch(BACKEND_URL + path, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json().catch(function () { return {}; });
+    return { status: r.status, d: d };
+  }
+  let res = await once(payload);
+  if (res.status === 401 || res.d.authRequired) {
+    const auth = await signGuard(action, await sha256Hex(extraText));
+    res = await once(Object.assign({}, payload, auth));
+  }
+  return res.d;
+}
+
 // ── Contract checker ───────────────────────────────────────────────────
 async function checkContract() {
   const input = document.getElementById('contractInput').value.trim();
@@ -1184,11 +1223,7 @@ async function checkContract() {
   showResult('contractResult', 'pending', t('msg_checking_contract'), null);
 
   try {
-    const r = await fetch(BACKEND_URL + '/api/check-contract', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({address: input, lang: currentLang()})
-    });
-    const d = await r.json();
+    const d = await postGuard('/api/check-contract', {address: input, lang: currentLang()}, 'contract', input.toLowerCase());
 
     if (d.limitReached) {
       showResult('contractResult', 'caution', d.error, []);
@@ -1201,9 +1236,11 @@ async function checkContract() {
         answer => showResult('contractResult', guessVerdict(answer), answer, liveLinks),
         err    => showResult('contractResult', 'caution', t('msg_ai_failed', {err: err}), liveLinks)
       );
+    } else if (d.error) {
+      showResult('contractResult', 'caution', d.error, []);
     }
   } catch (e) {
-    showResult('contractResult', 'caution', t('msg_server_unavailable'), []);
+    showResult('contractResult', 'caution', (e && e.message) || t('msg_server_unavailable'), []);
   }
   btn.disabled = false; btn.textContent = t('contract_btn');
 }
@@ -1230,11 +1267,7 @@ async function checkURL() {
   showResult('urlResult', 'pending', t('msg_checking_url'), null);
 
   try {
-    const r = await fetch(BACKEND_URL + '/api/check-url', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({url: input, lang: currentLang()})
-    });
-    const d = await r.json();
+    const d = await postGuard('/api/check-url', {url: input, lang: currentLang()}, 'url', input);
 
     if (d.limitReached) {
       showResult('urlResult', 'caution', d.error, []);
@@ -1248,9 +1281,11 @@ async function checkURL() {
         answer => showResult('urlResult', guessVerdict(answer), answer, []),
         err    => showResult('urlResult', 'caution', t('msg_ai_failed', {err: err}), [])
       );
+    } else if (d.error) {
+      showResult('urlResult', 'caution', d.error, []);
     }
   } catch (e) {
-    showResult('urlResult', 'caution', t('msg_server_unavailable'), []);
+    showResult('urlResult', 'caution', (e && e.message) || t('msg_server_unavailable'), []);
   }
   btn.disabled = false; btn.textContent = t('url_btn');
 }
@@ -1307,11 +1342,7 @@ async function checkBot() {
   showResult('botResult', 'pending', t('msg_bot_checking'), null);
 
   try {
-    const r = await fetch(BACKEND_URL + '/api/check-bot', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({address: input, lang: currentLang()})
-    });
-    const d = await r.json();
+    const d = await postGuard('/api/check-bot', {address: input, lang: currentLang()}, 'bot', input.toLowerCase());
     if (d.limitReached) {
       showResult('botResult', 'caution', d.error, []);
     } else if (d.jobId) {
@@ -1361,13 +1392,9 @@ async function sendAsk() {
   const loading = addMsg(t('msg_ask_analyzing'), 'bot');
 
   try {
-    const r = await fetch(BACKEND_URL + '/api/ask', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({question: q, lang: currentLang()})
-    });
-    const d = await r.json();
+    const d = await postGuard('/api/ask', {question: q, lang: currentLang()}, 'ask', q);
     if (d.limitReached) { loading.textContent = '⚠️ ' + d.error; return; }
-    if (!d.jobId) throw new Error('No job ID');
+    if (!d.jobId) throw new Error(d.error || 'No job ID');
     loading.textContent = t('msg_ask_progress', {job: d.jobId});
 
     pollJob(d.jobId,
@@ -1636,12 +1663,7 @@ async function scanAirdrops() {
   out.innerHTML = '<div style="color:var(--muted);font-size:18px;padding:10px 0">' + t('msg_airdrop_fetching') + '</div>';
 
   try {
-    const r = await fetch(BACKEND_URL + '/api/scan-airdrops', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address: _auditAddress, lang: currentLang() }),
-    });
-    const d = await r.json();
+    const d = await postGuard('/api/scan-airdrops', { address: _auditAddress, lang: currentLang() }, 'airdrop', _auditAddress.toLowerCase());
 
     if (d.limitReached) {
       out.innerHTML = '<div style="color:var(--yellow);font-size:18px;padding:10px 0">' + t('msg_airdrop_limit', {msg: d.message || d.error || ''}) + '</div>';

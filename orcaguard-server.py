@@ -12,7 +12,7 @@ Protects non-technical crypto users from scams:
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import json, os, threading, time, secrets, base64, re
+import json, os, threading, time, secrets, base64, re, hashlib, ipaddress
 from urllib.parse import urlparse, parse_qs, quote as url_quote
 
 PORT = int(os.environ.get("PORT", 8186))
@@ -744,26 +744,112 @@ def _cors_for(handler) -> str:
         return origin
     return _CORS_ORIGINS[0] if _CORS_ORIGINS else "https://orcaguard.win"
 
-def _get_client_ip(handler) -> str:
-    """Get real IP, respecting Railway's X-Forwarded-For proxy header."""
-    forwarded = handler.headers.get("X-Forwarded-For", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return handler.client_address[0]
+def _ip_ok(value) -> bool:
+    try:
+        ipaddress.ip_address((value or "").strip())
+        return True
+    except ValueError:
+        return False
 
-def _check_ai_limit(ip: str) -> tuple[bool, int]:
-    """Returns (allowed, remaining). Deducts 1 on success."""
+def _get_client_ip(handler) -> str:
+    """CF-Connecting-IP, else the last valid X-Forwarded-For hop, else the peer."""
+    cf = (handler.headers.get("CF-Connecting-IP") or "").strip()
+    if _ip_ok(cf):
+        return cf
+    last = ""
+    for hop in (handler.headers.get("X-Forwarded-For") or "").split(","):
+        hop = hop.strip()
+        if _ip_ok(hop):
+            last = hop
+    if last:
+        return last
+    return handler.client_address[0] if handler.client_address else "0"
+
+def _allow_ai(ip: str, wallet: str) -> tuple[bool, int]:
+    """12 free AI checks per wallet and per IP. Deducts both only if both have room."""
     today = time.strftime("%Y-%m-%d")
+    keys = ("ip:" + ip, "w:" + (wallet or "").lower())
     with _ip_lock:
-        rec = _ip_usage.get(ip)
-        if rec is None or rec["date"] != today:
-            _ip_usage[ip] = {"count": 0, "date": today}
-            rec = _ip_usage[ip]
-        remaining = AI_DAILY_LIMIT - rec["count"]
-        if remaining <= 0:
-            return False, 0
-        rec["count"] += 1
-        return True, remaining - 1
+        recs = []
+        for key in keys:
+            rec = _ip_usage.get(key)
+            if rec is None or rec["date"] != today:
+                rec = {"count": 0, "date": today}
+                _ip_usage[key] = rec
+            if rec["count"] >= AI_DAILY_LIMIT:
+                return False, 0
+            recs.append(rec)
+        for rec in recs:
+            rec["count"] += 1
+        remaining = min(AI_DAILY_LIMIT - rec["count"] for rec in recs)
+        return True, remaining
+
+_sig_used = set()
+_sig_lock = threading.Lock()
+_AUTH_MAX_AGE = 600
+_MAX_BODY = 1_048_576
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
+
+def _use_sig(signature: str) -> bool:
+    sig = (signature or "").strip().lower()
+    if not sig:
+        return False
+    with _sig_lock:
+        if sig in _sig_used:
+            return False
+        _sig_used.add(sig)
+        if len(_sig_used) > 8000:
+            _sig_used.clear()
+            _sig_used.add(sig)
+        return True
+
+def _auth_caller(data, action, extra):
+    """Returns (wallet, None) or (None, (status, error)).
+
+    Message: OrcaGuard|action|address_lower|unix|extra. One-time, 10 minutes.
+    """
+    wallet = (data.get("wallet") or "").strip().lower()
+    message = (data.get("auth_message") or "").strip()
+    signature = (data.get("signature") or "").strip()
+    if not re.fullmatch(r"0x[0-9a-f]{40}", wallet) or not message or not signature:
+        return None, (401, "A wallet signature is required.")
+    parts = message.split("|")
+    if len(parts) != 5 or parts[0] != "OrcaGuard" or parts[1] != action:
+        return None, (401, "A wallet signature is required.")
+    if parts[2] != wallet or parts[4] != extra:
+        return None, (401, "A wallet signature is required.")
+    try:
+        ts = int(parts[3])
+    except ValueError:
+        return None, (401, "A wallet signature is required.")
+    if abs(time.time() - ts) > _AUTH_MAX_AGE:
+        return None, (401, "That signature expired. Sign again.")
+    try:
+        from eth_account import Account
+        from eth_account.messages import encode_defunct
+        got = Account.recover_message(encode_defunct(text=message), signature=signature).lower()
+    except Exception:
+        return None, (401, "A wallet signature is required.")
+    if got != wallet or not _use_sig(signature):
+        return None, (401, "A wallet signature is required.")
+    return wallet, None
+
+def _gate_spend(handler, data, action, extra):
+    """Auth, then the shared free quota. Sends the error response itself."""
+    wallet, err = _auth_caller(data, action, extra)
+    if err:
+        handler._send_json({"ok": False, "authRequired": True, "error": err[1]}, err[0])
+        return None
+    allowed, remaining = _allow_ai(_get_client_ip(handler), wallet)
+    if not allowed:
+        handler._send_json({
+            "ok": False, "limitReached": True,
+            "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!",
+        }, 429)
+        return None
+    return wallet, remaining
 
 def _peek_ai_remaining(ip: str) -> int:
     """Check remaining without deducting."""
@@ -802,13 +888,21 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({"error": msg}, code)
 
     def _read_body(self):
-        length = int(self.headers.get("Content-Length", 0))
+        try:
+            length = int(self.headers.get("Content-Length", 0) or 0)
+        except ValueError:
+            length = 0
+        if length < 0 or length > _MAX_BODY:
+            self.close_connection = True
+            self._send_error("Request is too large.", 413)
+            return None
         if not length:
             return {}
         try:
-            return json.loads(self.rfile.read(length))
+            data = json.loads(self.rfile.read(length))
         except Exception:
             return {}
+        return data if isinstance(data, dict) else {}
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -928,6 +1022,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_ask(self):
         body     = self._read_body()
+        if body is None:
+            return
         question = body.get("question", "").strip()
         if not question:
             self._send_error("question is required")
@@ -936,15 +1032,13 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error("question too long (max 3000 chars)")
             return
 
-        ip = _get_client_ip(self)
-        allowed, remaining = _check_ai_limit(ip)
-        if not allowed:
-            self._send_json({"ok": False, "limitReached": True,
-                             "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
+        gated = _gate_spend(self, body, "ask", _sha256(question))
+        if not gated:
             return
+        _wallet, remaining = gated
 
         import uuid
-        job_id = str(uuid.uuid4())[:12]
+        job_id = str(uuid.uuid4())
         with _jobs_lock:
             _jobs[job_id] = {"status": "pending", "ts": time.time()}
 
@@ -955,7 +1049,7 @@ class Handler(BaseHTTPRequestHandler):
                     _jobs[job_id] = {"status": "done", "ts": time.time(), "answer": answer}
             except Exception as e:
                 with _jobs_lock:
-                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
+                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": "AI check failed."}
             with _jobs_lock:
                 if len(_jobs) > 50:
                     oldest = sorted(_jobs.items(), key=lambda x: x[1].get("ts", 0))
@@ -967,6 +1061,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_check_contract(self):
         body    = self._read_body()
+        if body is None:
+            return
         address = body.get("address", "").strip()
         if not address:
             self._send_error("address is required")
@@ -977,13 +1073,11 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"ok": True, "quick": True, **quick})
             return
 
-        # Unknown contract — check rate limit before using AIVM
-        ip = _get_client_ip(self)
-        allowed, remaining = _check_ai_limit(ip)
-        if not allowed:
-            self._send_json({"ok": False, "limitReached": True,
-                             "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
+        # Unknown contract — wallet proof and quota before any AIVM spend
+        gated = _gate_spend(self, body, "contract", _sha256(address.lower()))
+        if not gated:
             return
+        _wallet, remaining = gated
 
         # Live data enrichment — Etherscan + Ethereum RPC + Lightchain RPC
         import urllib.request as _ur
@@ -1062,7 +1156,7 @@ class Handler(BaseHTTPRequestHandler):
             t.start()
 
         import uuid
-        job_id = str(uuid.uuid4())[:12]
+        job_id = str(uuid.uuid4())
         with _jobs_lock:
             _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "contract", "address": addr_norm}
 
@@ -1237,12 +1331,14 @@ Be direct. Protect the user from loss."""
                     _jobs[job_id] = {"status": "done", "ts": time.time(), "answer": answer, "type": "contract"}
             except Exception as e:
                 with _jobs_lock:
-                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
+                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": "AI check failed."}
 
         threading.Thread(target=_run, daemon=True).start()
 
     def _handle_check_url(self):
         body = self._read_body()
+        if body is None:
+            return
         url  = body.get("url", "").strip()
         if not url:
             self._send_error("url is required")
@@ -1253,13 +1349,11 @@ Be direct. Protect the user from loss."""
             self._send_json({"ok": True, "quick": True, **quick})
             return
 
-        # Unknown URL — check rate limit before using AIVM
-        ip = _get_client_ip(self)
-        allowed, remaining = _check_ai_limit(ip)
-        if not allowed:
-            self._send_json({"ok": False, "limitReached": True,
-                             "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
+        # Unknown URL — wallet proof and quota before any AIVM spend
+        gated = _gate_spend(self, body, "url", _sha256(url))
+        if not gated:
             return
+        _wallet, remaining = gated
 
         # Domain summary for the model (parsed server-side)
         try:
@@ -1295,7 +1389,7 @@ Structure:
 3. What to do next (bookmark official sites; do not connect if unsure)"""
 
         import uuid
-        job_id = str(uuid.uuid4())[:12]
+        job_id = str(uuid.uuid4())
         with _jobs_lock:
             _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "url", "url": url}
 
@@ -1306,7 +1400,7 @@ Structure:
                     _jobs[job_id] = {"status": "done", "ts": time.time(), "answer": answer, "type": "url"}
             except Exception as e:
                 with _jobs_lock:
-                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
+                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": "AI check failed."}
 
         threading.Thread(target=_run, daemon=True).start()
         self._send_json({"ok": True, "quick": False, "jobId": job_id, "remaining": remaining})
@@ -1316,6 +1410,8 @@ Structure:
         import urllib.request as _ur
 
         body    = self._read_body()
+        if body is None:
+            return
         address = (body.get("address") or "").strip()
         if not address:
             self._send_error("address is required")
@@ -1446,6 +1542,8 @@ Structure:
 
     def _handle_check_bot(self):
         body    = self._read_body()
+        if body is None:
+            return
         address = body.get("address", "").strip()
         if not address:
             self._send_error("address is required")
@@ -1454,13 +1552,10 @@ Structure:
             self._send_error("invalid address format")
             return
 
-        # Rate limit check
-        ip = _get_client_ip(self)
-        allowed, remaining = _check_ai_limit(ip)
-        if not allowed:
-            self._send_json({"ok": False, "limitReached": True,
-                             "error": f"You've used all {AI_DAILY_LIMIT} free AI questions for today. Come back tomorrow!"}, 429)
+        gated = _gate_spend(self, body, "bot", _sha256(address.lower()))
+        if not gated:
             return
+        _wallet, remaining = gated
 
         # On-chain lookup — parallel threads to avoid sequential timeout
         import urllib.request as _ur
@@ -1601,7 +1696,7 @@ Structure:
         lcai_tx       = int(results["lcai_tx"], 16) if results["lcai_tx"] else 0
 
         import uuid
-        job_id = str(uuid.uuid4())[:12]
+        job_id = str(uuid.uuid4())
         with _jobs_lock:
             _jobs[job_id] = {"status": "pending", "ts": time.time(), "type": "bot", "address": address}
 
@@ -1737,7 +1832,7 @@ What to watch for: [one practical note for someone interacting with this address
                     _jobs[job_id] = {"status": "done", "ts": time.time(), "answer": answer, "type": "bot"}
             except Exception as e:
                 with _jobs_lock:
-                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
+                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": "AI check failed."}
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -1748,6 +1843,8 @@ What to watch for: [one practical note for someone interacting with this address
         import urllib.parse as _up
 
         body    = self._read_body()
+        if body is None:
+            return
         address = body.get("address", "").strip()
         if not address:
             self._send_error("address is required")
@@ -1756,7 +1853,6 @@ What to watch for: [one practical note for someone interacting with this address
             self._send_error("invalid address format")
             return
 
-        ip = _get_client_ip(self)
         addr_l = address.lower()
 
         # Name/symbol patterns common on scam airdrops
@@ -1966,7 +2062,22 @@ What to watch for: [one practical note for someone interacting with this address
             })
             return
 
-        allowed, remaining = _check_ai_limit(ip)
+        wallet, auth_err = _auth_caller(body, "airdrop", _sha256(addr_l))
+        if auth_err:
+            self._send_json({
+                "ok": True,
+                "authRequired": True,
+                "aiUsed": False,
+                "flagged": flagged[:10],
+                "clean": len(clean),
+                "total": len(all_tokens),
+                "ethCount": eth_n,
+                "lightchainCount": lc_n,
+                "tokens": all_tokens[:40],
+                "message": "Sign with your wallet to run the AI check.",
+            })
+            return
+        allowed, remaining = _allow_ai(_get_client_ip(self), wallet)
         if not allowed:
             self._send_json({
                 "ok": True,
@@ -1977,6 +2088,7 @@ What to watch for: [one practical note for someone interacting with this address
                 "lightchainCount": lc_n,
                 "aiUsed": False,
                 "limitReached": True,
+                "tokens": all_tokens[:40],
                 "message": (
                     f"Found {len(flagged)} suspicious token(s) by name. "
                     f"AI daily limit reached — showing name-based flags only. "
@@ -2007,7 +2119,7 @@ REASON: [1 sentence]
 SUMMARY: [2-3 sentences — danger level + warn not to visit websites in token names or approve unknown contracts]"""
 
         import uuid
-        job_id = str(uuid.uuid4())[:12]
+        job_id = str(uuid.uuid4())
         with _jobs_lock:
             _jobs[job_id] = {
                 "status": "pending", "ts": time.time(),
@@ -2033,7 +2145,7 @@ SUMMARY: [2-3 sentences — danger level + warn not to visit websites in token n
                     }
             except Exception as e:
                 with _jobs_lock:
-                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": str(e)}
+                    _jobs[job_id] = {"status": "error", "ts": time.time(), "error": "AI check failed."}
 
         threading.Thread(target=_run, daemon=True).start()
         self._send_json({
