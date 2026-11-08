@@ -1,399 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="referrer" content="no-referrer" />
-<title>Create an LCAI Gift Card</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LCAI Gift Card — down for maintenance</title>
+<meta name="robots" content="noindex">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
-  @font-face{
-    font-family:Inter;
-    src:url("brand/Inter-Variable.ttf") format("truetype");
-    font-weight:100 900;
-    font-style:normal;
-    font-display:swap;
-  }
-  :root{
-    --bg:#14152C; --text:#CCCEEF; --primary:#5B4BFF; --secondary:#DD00AC; --hot:#EE11FB;
-    --line:rgba(204,206,239,.28); --panel:rgba(204,206,239,.06); --radius:16px;
-  }
-  *{box-sizing:border-box}
-  ::selection{background:#5B4BFF; color:#fff}
-  html{scrollbar-color:#5B4BFF #14152C; scroll-behavior:smooth}
-  *::-webkit-scrollbar{width:11px; height:11px}
-  *::-webkit-scrollbar-thumb{background:#5B4BFF; border-radius:8px; border:2px solid #14152C}
-  *::-webkit-scrollbar-track{background:#14152C}
-  input{caret-color:#EE11FB}
-  :focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
   body{
-    margin:0; background:#14152C; color:#CCCEEF;
-    font:15px/1.5 Inter,sans-serif; min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:#e8e8f0;
+    background:#0d0d1a;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
   }
-  @keyframes rise{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
-  .card{animation:rise .45s cubic-bezier(.16,1,.3,1) both}
-  @media (prefers-reduced-motion:reduce){
-    *{animation:none!important; transition:none!important}
-    html{scroll-behavior:auto}
-    .gift{transform:none!important}
+  .card{max-width:560px}
+  .mark{font-size:56px;line-height:1;margin-bottom:16px}
+  .badge{
+    display:inline-block;font-size:12px;letter-spacing:2px;text-transform:uppercase;
+    color:#00e5ff;margin-bottom:18px;font-weight:700;
   }
-  header{padding:12px 32px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
-  .mark{width:36px; height:36px; flex:none; display:block}
-  header h1{font-size:18px; margin:0; font-weight:650; letter-spacing:-0.02em; white-space:nowrap}
-  header .tag{color:#CCCEEF; font-size:13px}
-  header nav{margin-left:8px; display:flex; align-items:center; gap:8px}
-  header nav a{color:#CCCEEF; font-size:13px; font-weight:600; white-space:nowrap; text-decoration:none}
-  header nav a[aria-current="page"]{color:#fff}
-  header nav span{color:#CCCEEF; opacity:.45}
-  header > div{flex:none}
-  .wrap{width:100%; padding:12px 32px; display:grid; grid-template-columns:1.05fr .95fr; gap:28px; align-items:start}
-  .side{display:flex; flex-direction:column; gap:16px; min-width:0}
-  @media (max-width:900px){ .wrap{grid-template-columns:1fr; padding:20px 16px} header{padding:16px} }
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px}
-  .card h2{margin:0 0 8px; font-size:18px; font-weight:650; letter-spacing:-0.02em}
-  .card p.sub{margin:0 0 8px; color:#CCCEEF; font-size:14px; max-width:62ch}
-  label{display:block; font-size:13px; color:#CCCEEF; margin:10px 0 4px; font-weight:600}
-  input[type=text],input[type=number],input[type=datetime-local]{
-    width:100%; background:#14152C; border:1px solid var(--line); color:#CCCEEF;
-    border-radius:10px; padding:12px 13px; font:15px/1.4 Inter,sans-serif; outline:none;
-  }
-  input:focus{border-color:#5B4BFF}
-  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    background:#5B4BFF; color:#fff; border:none; border-radius:12px; padding:13px 18px;
-    font:700 15px/1 Inter,sans-serif; cursor:pointer; width:100%; margin-top:20px;
-    box-shadow:0 8px 16px rgba(0,0,0,.35); transition:transform .18s ease}
-  .btn:hover:not(:disabled){transform:translateY(-1px)}
-  .btn:disabled{opacity:.5; cursor:not-allowed}
-  .btn.secondary{background:transparent; color:#CCCEEF; border:1px solid var(--line); box-shadow:none}
-  .btn.secondary:hover:not(:disabled){border-color:#5B4BFF}
-  .wallet{margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-  .btn.connect{width:auto; margin:0; padding:10px 16px; flex:none}
-  .btn.connect.is-on{cursor:default}
-  .btn.connect.is-on:hover{transform:none}
-  .btn.connect.is-lock{background:#5B4BFF; color:#fff; border-color:transparent}
-  .addr{color:#CCCEEF; font:650 13px/1 Inter,sans-serif; white-space:nowrap}
-  button[hidden],.addr[hidden]{display:none !important}
-  @media (max-width:700px){
-    .wallet{flex:1 0 100%; margin-left:0}
-    .btn.connect{flex:1 1 auto}
-  }
-  .summary{background:transparent; border:none; padding:0; animation:none}
-  .gift{border-radius:28px; border:10px solid #5B4BFF; background:#fff; color:#14152C;
-    padding:16px 18px 14px; text-align:center; max-width:460px;
-    box-shadow:0 18px 32px rgba(0,0,0,.35)}
-  .gift .orbit{width:180px; height:180px; display:block; margin:0 auto}
-  .gift .word{margin-top:2px; font:800 26px/1 Inter,sans-serif; letter-spacing:.04em; color:#14152C}
-  .gift .amt{font-size:28px; font-weight:700; letter-spacing:-0.03em; margin-top:14px; color:#14152C}
-  .gift .amt small{font-size:14px; font-weight:650; margin-left:6px; letter-spacing:0; color:#14152C}
-  .gift .msg{margin:8px auto 0; font-size:15px; color:#14152C; max-width:32ch}
-  .gift .msg:empty{display:none}
-  .line{display:flex; justify-content:space-between; gap:16px; padding:6px 0; border-bottom:1px solid var(--line)}
-  .line span:first-child{color:#CCCEEF}
-  .line.total{font-weight:700; border-bottom:none; padding-top:8px}
-  .line.total span:last-child{color:#EE11FB; font-size:18px}
-  .note{font-size:13px; color:#CCCEEF; margin-top:6px; max-width:62ch}
-  .warn{border:1px solid #DD00AC; color:#CCCEEF; border-radius:12px; padding:10px 14px; font-size:14px; margin-top:10px}
-  .warn b{color:#EE11FB}
-  .status{margin-top:14px; font-size:14px; color:#CCCEEF; min-height:20px}
-  .status:empty{display:none}
-  .status.err{color:#EE11FB}
-  .status.ok{color:#EE11FB}
-  .linkbox{display:none; margin:16px 32px 0; scroll-margin-top:12px}
-  .linkbox.show{display:block; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px}
-  @media (max-width:900px){ .linkbox{margin:12px 16px 0} }
-  .linkfield{display:flex; gap:10px; margin-top:8px}
-  .linkfield input{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:13px}
-  .pill{display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 8px; font-size:12px; font-weight:600}
-  code{background:#14152C; padding:1px 6px; border-radius:6px; font-size:12.5px}
-  .legal{margin:0; padding:0; color:#CCCEEF; font-size:13px; line-height:1.4}
-  .legal h2{margin:0 0 6px; font-size:15px; font-weight:650; color:#fff; letter-spacing:0}
-  .legal h3{margin:10px 0 4px; font-size:13px; font-weight:650; letter-spacing:0; color:#CCCEEF}
-  .legal ul{margin:0; padding-left:1.15em}
-  .legal p{margin:0}
+  h1{font-size:clamp(28px,6vw,44px);line-height:1.15;font-weight:800}
+  p{margin-top:16px;font-size:18px;color:#9898b8}
 </style>
 </head>
 <body>
-<header>
-  <img class="mark" src="brand/symbol-light.svg?v=1" width="36" height="36" alt="Lightchain" />
-  <div>
-    <h1>LCAI Gift Card</h1>
-    <span class="tag">Create a card</span>
-  </div>
-  <nav>
-    <a href="create.html" aria-current="page">Create</a>
-    <span aria-hidden="true">|</span>
-    <a href="redeem.html">Redeem</a>
-    <span aria-hidden="true">|</span>
-    <a href="status.html">Status</a>
-  </nav>
-  <div class="wallet">
-    <span id="walletAddr" class="addr" hidden></span>
-    <button id="connectBtn" class="btn secondary connect" type="button">Connect wallet</button>
-    <button id="disconnectBtn" class="btn secondary connect" type="button" hidden>Disconnect</button>
-  </div>
-</header>
-
-<div id="linkbox" class="linkbox">
-  <h2 style="margin-top:0">Your gift link</h2>
-  <p class="sub">Copy this and email it yourself. We do not store or send it.</p>
-  <div class="linkfield">
-    <input id="link" type="text" readonly />
-    <button id="copyBtn" class="btn secondary" style="width:auto; margin:0">Copy</button>
-  </div>
-  <div class="note" id="cardIdNote"></div>
-</div>
-
-<div class="wrap">
-  <div class="side">
-  <!-- LEFT: the form -->
   <div class="card">
-    <h2>Gift details</h2>
-    <p class="sub">The gift locks in the contract. The app never sees an email, a code, or a wallet.</p>
-
-    <label for="amount">Gift amount (LCAI)</label>
-    <input id="amount" type="number" min="0" step="any" placeholder="100" />
-
-    <label for="end">Expires on</label>
-    <input id="end" type="datetime-local" />
-    <div class="note">After this date, the card can only be sent back to you. You pick the date.</div>
-
-    <label for="noteIn">Short note (optional)</label>
-    <input id="noteIn" type="text" maxlength="120" placeholder="Happy birthday!" />
-    <div class="note">The note rides inside the link, not on any server.</div>
-
-    <div id="status" class="status"></div>
+    <div class="mark">🐳</div>
+    <div class="badge">LCAI Gift Card</div>
+    <h1>Down for maintenance</h1>
+    <p>This site is closed while we fix things. Nothing else here is open.</p>
   </div>
-
-  <section class="legal" id="instructions">
-    <h2>How this works, and the limits</h2>
-    <h3>Instructions</h3>
-    <ul>
-      <li>You send the link yourself. The app never sees your email or the gift code.</li>
-      <li>Anyone who opens the link can claim the card. Keep amounts small.</li>
-      <li>After the end date the card can only be returned to the sender. Early cancel is possible only before it is claimed.</li>
-      <li>The recipient needs an address they control, or must save a page-generated key before the coins move.</li>
-    </ul>
-    <h3>Privacy</h3>
-    <p>We keep no personal information. No accounts, no database, and no copy of your email, the gift code, or your visit. The one-time key lives only in the link you send. A hosted helper may submit the redeem for you and sees only what is needed to do that. It stores nothing.</p>
-    <h3>Disclaimer</h3>
-    <p>This is a free, no-custody tool. The app owner never holds the funds and charges no fee. You are responsible for the wallet you use, the link you send, and the amount you lock. No warranty. Use at your own risk. Not financial advice. Lost keys or shared links cannot be recovered by the app.</p>
-  </section>
-  </div>
-
-  <div class="summary">
-    <div class="gift" id="preview">
-      <svg class="orbit" viewBox="0 0 200 200" aria-hidden="true">
-        <defs>
-          <linearGradient id="cardOrbit" x1="30" y1="16" x2="170" y2="184" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stop-color="#5B4BFF"/>
-            <stop offset="1" stop-color="#EE11FB"/>
-          </linearGradient>
-        </defs>
-        <g fill="none" stroke="url(#cardOrbit)" stroke-width="3.6" stroke-linecap="round">
-          <ellipse cx="100" cy="100" rx="66" ry="42"/>
-          <ellipse cx="100" cy="100" rx="66" ry="42" transform="rotate(36 100 100)"/>
-          <ellipse cx="100" cy="100" rx="66" ry="42" transform="rotate(72 100 100)"/>
-          <ellipse cx="100" cy="100" rx="66" ry="42" transform="rotate(108 100 100)"/>
-          <ellipse cx="100" cy="100" rx="66" ry="42" transform="rotate(144 100 100)"/>
-        </g>
-        <path fill="url(#cardOrbit)" d="M103 58 L81 98 H97 L87 140 L119 92 H101 L113 58 Z"/>
-      </svg>
-      <div class="word">GIFT CARD</div>
-      <div class="amt" id="previewAmt">0 <small>LCAI</small></div>
-      <div class="msg" id="previewMsg"></div>
-    </div>
-    <h2 style="margin-top:10px">What gets locked</h2>
-    <p class="sub">The gift and the gas cushion are two separate numbers.</p>
-
-    <div class="line"><span>Gift amount</span><span id="sumGift">—</span></div>
-    <div class="line">
-      <span>Gas cushion <span class="pill" id="cushionPill">auto</span></span>
-      <span id="sumCushion">—</span>
-    </div>
-    <label for="cushion">Cushion (LCAI) — estimated from current gas, adjustable</label>
-    <input id="cushion" type="number" min="0" step="any" placeholder="0.0" />
-    <div class="note">Pays the gas when the gift is redeemed. Leftover goes to the recipient.</div>
-
-    <div class="line total" style="margin-top:8px"><span>Total you lock</span><span id="sumTotal">—</span></div>
-
-    <div class="warn">
-      <b>Before you send:</b> anyone who can open the link can claim this gift. Send it only to the
-      person you mean to, and keep gift cards small. There is no way to take it back once it is claimed
-      (only before, via early cancel).
-    </div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
-<script>
-/* ============================ CONFIG — fill at deploy ============================ */
-const CONFIG = {
-  CHAIN_ID: 9200,                      // Lightchain mainnet
-  CHAIN_ID_HEX: "0x23f0",
-  CONTRACT_ADDRESS: "0xA4206a749e1E106F79F9dFEA0d89deB1F6909f8a",
-  REDEEM_URL: "https://orcaguard.win/gift/redeem.html",           // hosted redeem page
-  // Only used if the wallet does not already have Lightchain mainnet added:
-  CHAIN_PARAMS: {
-    chainId: "0x23f0",
-    chainName: "Lightchain Mainnet",
-    nativeCurrency: { name: "LCAI", symbol: "LCAI", decimals: 18 },
-    rpcUrls: ["https://rpc.mainnet.lightchain.ai"],
-    blockExplorerUrls: ["https://mainnet.lightscan.app"]
-  }
-};
-const CLAIM_GAS_ESTIMATE = 120000n;   // rough gas for a claim; cushion = gasPrice * this * safety
-const CUSHION_SAFETY = 15n;           // x1.5  (divided by 10 below)
-
-const ABI = ["function create(address cardId, uint256 amount, uint64 endDate) payable"];
-/* ================================================================================ */
-
-let provider, signer, connected = false;
-
-const $ = (id) => document.getElementById(id);
-function setStatus(msg, kind){ const el=$("status"); el.textContent=msg||""; el.className="status"+(kind?" "+kind:""); }
-
-function paintPreview(){
-  const raw = ($("amount").value || "").trim();
-  $("previewAmt").innerHTML = (raw === "" ? "0" : raw) + " <small>LCAI</small>";
-  $("previewMsg").textContent = $("noteIn").value || "";
-}
-
-// default expiry: 30 days out
-(function(){
-  const d=new Date(Date.now()+30*864e5); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
-  $("end").value=d.toISOString().slice(0,16);
-})();
-
-async function connect(){
-  if(!window.ethereum){ setStatus("No wallet found. Install a Lightchain-compatible wallet.","err"); return; }
-  let permitted = false;
-  try{
-    await window.ethereum.request({ method:"wallet_requestPermissions", params:[{ eth_accounts:{} }] });
-    permitted = true;
-  }catch(e){
-    if(e && e.code === 4001){ setStatus("Connection cancelled.","err"); return; }
-  }
-  try{
-    provider = new ethers.BrowserProvider(window.ethereum);
-    if(!permitted) await provider.send("eth_requestAccounts", []);
-    await ensureChain();
-    signer = await provider.getSigner();
-    connected = true;
-    const addr = await signer.getAddress();
-    $("walletAddr").textContent = addr.slice(0,6)+"…"+addr.slice(-4);
-    $("walletAddr").hidden = false;
-    $("connectBtn").textContent = "Lock the gift";
-    $("connectBtn").classList.add("is-lock");
-    $("connectBtn").disabled = false;
-    $("disconnectBtn").hidden = false;
-    await refreshCushion();
-    setStatus("Wallet connected.","ok");
-  }catch(e){
-    if(e && e.code === 4001){ setStatus("Connection cancelled.","err"); return; }
-    setStatus((e && (e.shortMessage||e.message)) || "Could not connect the wallet.","err");
-  }
-}
-
-async function disconnect(){
-  $("disconnectBtn").disabled = true;
-  try{
-    if(window.ethereum){
-      await window.ethereum.request({ method:"wallet_revokePermissions", params:[{ eth_accounts:{} }] });
-    }
-  }catch(e){ /* some wallets have no revoke; the page still drops the session */ }
-  provider = null;
-  signer = null;
-  connected = false;
-  $("walletAddr").hidden = true;
-  $("walletAddr").textContent = "";
-  $("connectBtn").textContent = "Connect wallet";
-  $("connectBtn").classList.remove("is-lock");
-  $("connectBtn").disabled = false;
-  $("disconnectBtn").hidden = true;
-  $("disconnectBtn").disabled = false;
-  setStatus("Wallet disconnected. Connect again to choose an account.","ok");
-}
-
-async function ensureChain(){
-  const net = await provider.getNetwork();
-  if(Number(net.chainId) === CONFIG.CHAIN_ID) return;
-  try{
-    await window.ethereum.request({ method:"wallet_switchEthereumChain", params:[{chainId:CONFIG.CHAIN_ID_HEX}] });
-  }catch(e){
-    if(e && e.code === 4902 && CONFIG.CHAIN_PARAMS.rpcUrls.length){
-      await window.ethereum.request({ method:"wallet_addEthereumChain", params:[CONFIG.CHAIN_PARAMS] });
-    }else{
-      throw new Error("Please switch your wallet to Lightchain mainnet (chain 9200).");
-    }
-  }
-  provider = new ethers.BrowserProvider(window.ethereum);
-}
-
-async function refreshCushion(){
-  try{
-    const fee = await provider.getFeeData();
-    const gp = fee.gasPrice ?? fee.maxFeePerGas ?? 0n;
-    const cushionWei = gp * CLAIM_GAS_ESTIMATE * CUSHION_SAFETY / 10n;
-    $("cushion").value = ethers.formatEther(cushionWei);
-  }catch(e){ /* leave blank for manual entry */ }
-  updateSummary();
-}
-
-function parseAmt(v){ try{ return ethers.parseEther((v||"0").toString()); }catch{ return 0n; } }
-
-function updateSummary(){
-  const gift = parseAmt($("amount").value);
-  const cushion = parseAmt($("cushion").value);
-  $("sumGift").textContent = ethers.formatEther(gift)+" LCAI";
-  $("sumCushion").textContent = ethers.formatEther(cushion)+" LCAI";
-  $("sumTotal").textContent = ethers.formatEther(gift+cushion)+" LCAI";
-  paintPreview();
-}
-["amount","cushion","noteIn"].forEach(id=>$(id).addEventListener("input",updateSummary));
-
-async function createCard(){
-  if(!connected){ await connect(); return; }
-  const gift = parseAmt($("amount").value);
-  const cushion = parseAmt($("cushion").value);
-  const endMs = new Date($("end").value).getTime();
-  if(gift <= 0n){ setStatus("Enter a gift amount.","err"); return; }
-  if(!endMs || endMs <= Date.now()){ setStatus("Pick an expiry date in the future.","err"); return; }
-  const endDate = BigInt(Math.floor(endMs/1000));
-
-  // 1) make the one-time key IN THE BROWSER. Its address is the card id.
-  const giftKey = ethers.Wallet.createRandom();
-  const cardId = giftKey.address;
-
-  try{
-    $("connectBtn").disabled = true;
-    setStatus("Confirm the transaction in your wallet…");
-    const c = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, signer);
-    const tx = await c.create(cardId, gift, endDate, { value: gift + cushion });
-    setStatus("Locking the gift on-chain…");
-    await tx.wait();
-
-    // 2) build the link. Key + note ONLY after the # (never sent to a server).
-    const frag = new URLSearchParams();
-    frag.set("k", giftKey.privateKey);
-    if($("noteIn").value) frag.set("n", $("noteIn").value);
-    const link = CONFIG.REDEEM_URL + "#" + frag.toString();
-
-    $("link").value = link;
-    $("linkbox").classList.add("show");
-    $("cardIdNote").innerHTML = "Card id (public, for the status page): <code>"+cardId+"</code>";
-    setStatus("Gift locked. Copy the link and email it yourself.","ok");
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    $("linkbox").scrollIntoView({behavior: reduce ? "auto" : "smooth", block:"start"});
-  }catch(e){
-    setStatus((e && (e.shortMessage||e.message)) || "Transaction failed.","err");
-  }finally{
-    if(connected) $("connectBtn").disabled = false;
-  }
-}
-
-$("connectBtn").onclick = ()=>{ if(connected) createCard(); else connect(); };
-$("disconnectBtn").onclick = disconnect;
-$("copyBtn").onclick = async ()=>{ try{ await navigator.clipboard.writeText($("link").value); $("copyBtn").textContent="Copied"; setTimeout(()=>$("copyBtn").textContent="Copy",1500);}catch{} };
-updateSummary();
-</script>
+  <script>
+    (function () {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) { reg.unregister(); });
+        }).catch(function () {});
+      }
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (key) { caches.delete(key); });
+        }).catch(function () {});
+      }
+    })();
+  </script>
 </body>
 </html>
