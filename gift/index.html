@@ -1,39 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="referrer" content="no-referrer" />
-<meta http-equiv="refresh" content="0; url=create.html" />
-<title>LCAI Gift Card</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LCAI Gift Card — down for maintenance</title>
+<meta name="robots" content="noindex">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
-  @font-face{
-    font-family:Inter;
-    src:url("brand/Inter-Variable.ttf") format("truetype");
-    font-weight:100 900;
-    font-style:normal;
-    font-display:swap;
-  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
   body{
-    margin:0; background:#14152C; color:#CCCEEF;
-    font:15px/1.5 Inter,sans-serif; min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:#e8e8f0;
+    background:#0d0d1a;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
   }
-  main{max-width:36rem; padding:32px}
-  h1{font-size:18px; margin:0 0 12px; font-weight:650; letter-spacing:-0.02em}
-  p{margin:0 0 16px}
-  ul{margin:0; padding-left:1.2em}
-  a{color:#CCCEEF}
-  a:focus-visible{outline:2px solid #5B4BFF; outline-offset:2px}
+  .card{max-width:560px}
+  .mark{font-size:56px;line-height:1;margin-bottom:16px}
+  .badge{
+    display:inline-block;font-size:12px;letter-spacing:2px;text-transform:uppercase;
+    color:#00e5ff;margin-bottom:18px;font-weight:700;
+  }
+  h1{font-size:clamp(28px,6vw,44px);line-height:1.15;font-weight:800}
+  p{margin-top:16px;font-size:18px;color:#9898b8}
 </style>
 </head>
 <body>
-<main>
-  <h1>LCAI Gift Card</h1>
-  <p><a href="create.html">Create a card</a></p>
-  <ul>
-    <li><a href="redeem.html">Redeem a card</a></li>
-    <li><a href="status.html">Card status</a></li>
-  </ul>
-</main>
+  <div class="card">
+    <div class="mark">🐳</div>
+    <div class="badge">LCAI Gift Card</div>
+    <h1>Down for maintenance</h1>
+    <p>Please check back soon.</p>
+  </div>
+  <script>
+    (function () {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) { reg.unregister(); });
+        }).catch(function () {});
+      }
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (key) { caches.delete(key); });
+        }).catch(function () {});
+      }
+    })();
+  </script>
 </body>
 </html>
