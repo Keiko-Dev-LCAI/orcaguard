@@ -53,12 +53,6 @@ VERIFIED_CONTRACTS = {
         "links": ["https://mainnet.lightscan.app/address/0xeBf97f16d843bFD9d9E6B1857B4C00d94ca7e2B2", "https://lightdex.app/"],
     },
     # ── Community / Keiko ecosystem (known-good, still use care) ─────────
-    "0xe7bd4500277f6167b6b454cf2cf529c062b4ca1a": {
-        "name": "OrcaMint NFT platform (Lightchain)",
-        "safe": True,
-        "note": "OrcaMint NFT contract on Lightchain mainnet (orcamint.xyz). Official KeikoDev/Orca app — still only interact via the real site.",
-        "links": ["https://orcamint.xyz/", "https://mainnet.lightscan.app/address/0xe7bD4500277f6167B6b454CF2CF529c062B4Ca1a"],
-    },
     "0x93ed20e33e7c88cfa73348086ed1f2c7a2b50854": {
         "name": "KEIKO token (Filament / Lightchain)",
         "safe": True,
@@ -119,7 +113,6 @@ VERIFIED_SITES = {
     "filament.exchange": {"name": "Filament — Community DEX & forge on Lightchain", "safe": True},
     "www.filament.exchange": {"name": "Filament — Community DEX & forge on Lightchain", "safe": True},
     "orcaguard.win": {"name": "OrcaGuard — Crypto safety assistant", "safe": True},
-    "orcamint.xyz": {"name": "OrcaMint — NFT platform on Lightchain", "safe": True},
     "dex-testnet.lightchain.ai": {"name": "Lightchain DEX (Testnet only) — Official", "safe": True},
 }
 
@@ -177,7 +170,7 @@ Official / verified sites (ONLY trust these for LCAI / Lightchain tooling):
 - docs.lightchain.ai, dao.lightchain.ai, forum.lightchain.ai, hub.lightchain.ai
 - mainnet.lightscan.app, deploy.lightchain.ai, chat.lightchain.ai
 - app.uniswap.org (ERC-20 only), filament.exchange (community DEX/forge — not the official LCAI Swap)
-- orcaguard.win, orcamint.xyz
+- orcaguard.win
 
 == COMMON CRYPTO SCAMS TO WATCH FOR ==
 
@@ -1370,7 +1363,7 @@ Be direct. Protect the user from loss."""
 URL: {url}
 Parsed domain: {_dom}
 
-Official Lightchain / LCAI tooling domains include (non-exhaustive): lightchain.ai and subdomains like bridge/docs/dao/workers/hub, lightdex.app, mainnet.lightscan.app, orcaguard.win, orcamint.xyz. Official Uniswap is app.uniswap.org. Filament community is filament.exchange.
+Official Lightchain / LCAI tooling domains include (non-exhaustive): lightchain.ai and subdomains like bridge/docs/dao/workers/hub, lightdex.app, mainnet.lightscan.app, orcaguard.win. Official Uniswap is app.uniswap.org. Filament community is filament.exchange.
 
 Check carefully for:
 - Typosquatting / lookalike domains (extra letters, numbers, wrong TLD)

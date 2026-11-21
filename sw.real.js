@@ -1,7 +1,7 @@
 // OrcaGuard service worker — offline shell cache for PWA install.
 // Network-first for navigations/API so safety data is never served stale;
 // cache-first only for static same-origin assets.
-const CACHE = 'orcaguard-v1';
+const CACHE = 'orcaguard-v2';
 const SHELL = [
   '/',
   '/index.html',
